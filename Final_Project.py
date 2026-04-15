@@ -145,15 +145,34 @@ def gravity():
             momentumY += 1
         offset.y-=momentumY
 
+def endLevel(end):
+    here = font.render("Hit here!", True, RED)
+    screen.blit(here,(end,end))
+    if playerRect.collidepoint(endPoint):
+        message = font.render("You have completed the level!", True, RED)
+        screen.blit(message, (100,100))
+        level += 1
+        
 tilemapLevel1 = [
     'B_______B______________________________BBB______________',
     'B__________________________________BBB_______________________BBBBBBBBB',
     'B_______B______________________BBB______________________',
     'B___________BB______________BBB_____________________________BBBBBBBBBBBB_____________________________________________B_____B______B______B',
-    'B______B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B_______E',
+    'B______B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B________E',
     'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBB',
     '___________________________________________________________________________________________________________BBBBBBBBBBBBBBBBBBBBBBBB______BBBBBBBB'
     ]
+
+endPoint = 500,500
+
+tileMapLevel2 = [
+    '--------------',
+    '---------------',
+    '-----------------',
+    'BBBBBBBBBBBBBBBBBB'
+    ]
+    
+   
     
 level = 1
 blocks = []
@@ -164,12 +183,14 @@ def buildWorld(tilemap):
         for x, tile in enumerate(row):
             if tile == 'B':
                 blocks.append(Block((offset.x + (x*tileSize), offset.y+(y*tileSize)), (tileSize, tileSize), BLUE))
-            if tile == 'E':
-                    message = font.render("You have completed the level!", True, RED)
-                    screen.blit(message, (100,100))
-                    level += 1
+##            if tile == 'E':
+##                endLevel(endPoint)
+                
 if level == 1:
     buildWorld(tilemapLevel1)
+    
+if level == 2:
+    buildWorld(tileMapLevel2)
 world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
 while gameLoop:
     #perform all physics calculations first
@@ -203,6 +224,7 @@ while gameLoop:
     pygame.display.set_caption(f"{inRange}")
     drawPlayer()
     angleCalc()
+    endLevel(endPoint)
     pygame.display.flip()
     
 
