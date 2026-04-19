@@ -26,6 +26,7 @@ grass = pygame.image.load("grass.png")
 dirt = pygame.image.load("dirt.png")
 brimstone = pygame.image.load("brimstone.png")
 lavarock = pygame.image.load("lavarock.png")
+stone = pygame.image.load("Gray stone.png")
 ##laceration = pygame.image.load("laceration.png")
 ##weakness= pygame.image.load("weakness.png")
 
@@ -220,7 +221,7 @@ while gameLoop:
     #offset.y+=momentumV
     #then do all your drawing
     for block in blocks:
-        block.draw(grass)
+        block.draw(stone)
     pygame.display.set_caption(f"{inRange}")
     drawPlayer()
     angleCalc()
