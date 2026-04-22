@@ -146,13 +146,13 @@ def gravity():
             momentumY += 1
         offset.y-=momentumY
 
-def endLevel(end):
-    here = font.render("Hit here!", True, RED)
-    screen.blit(here,(end,end))
-    if playerRect.collidepoint(endPoint):
-        message = font.render("You have completed the level!", True, RED)
-        screen.blit(message, (100,100))
-        level += 1
+##def endLevel(end):
+##    here = font.render("Hit here!", True, RED)
+##    screen.blit(here,(end,end))
+##    if playerRect.collidepoint(endPoint):
+##        message = font.render("You have completed the level!", True, RED)
+##        screen.blit(message, (100,100))
+##        level += 1
         
 tilemapLevel1 = [
     'B_______B______________________________BBB______________',
@@ -167,15 +167,15 @@ tilemapLevel1 = [
 endPoint = 500,500
 
 tileMapLevel2 = [
-    '--------------',
-    '---------------',
-    '-----------------',
-    'BBBBBBBBBBBBBBBBBB'
+    '---------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB------BBBBB',
+    '---------------BBBBBBBBBBBB',
+    '-----------------------------BBBBBBBBBB---------------------------',
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
     ]
     
    
     
-level = 1
+level = 2
 blocks = []
 tileSize = 100
 def buildWorld(tilemap):
@@ -225,7 +225,7 @@ while gameLoop:
     pygame.display.set_caption(f"{inRange}")
     drawPlayer()
     angleCalc()
-    endLevel(endPoint)
+##    endLevel(endPoint)
     pygame.display.flip()
     
 
