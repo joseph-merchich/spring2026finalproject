@@ -175,7 +175,7 @@ tileMapLevel2 = [
     
    
     
-level = 2
+level = 1
 blocks = []
 tileSize = 100
 def buildWorld(tilemap):
@@ -207,12 +207,13 @@ while gameLoop:
     world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
     gravity()
     inRange=False
-    for block in blocks:
-        block.rect.topleft = (block.position.x + world.x,block.position.y + world.y)
-        block.collide(playerRect)
-        if block.rect.colliderect(reticle):
-            inRange = True
-    grounded = False
+    if level == 1:
+        for block in blocks:
+            block.rect.topleft = (block.position.x + world.x,block.position.y + world.y)
+            block.collide(playerRect)
+            if block.rect.colliderect(reticle):
+                inRange = True
+        grounded = False
     #ground = pygame.Rect(world.x-100,world.y+150,800,200)
     #block1 = Block((world.x-100,world.y+150),(200,200),BLUE)
     
