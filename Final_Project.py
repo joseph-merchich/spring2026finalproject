@@ -27,6 +27,7 @@ dirt = pygame.image.load("dirt.png")
 brimstone = pygame.image.load("brimstone.png")
 lavarock = pygame.image.load("lavarock.png")
 stone = pygame.image.load("Gray stone.png")
+forest = pygame.image.load("Forest background.png")
 ##laceration = pygame.image.load("laceration.png")
 ##weakness= pygame.image.load("weakness.png")
 
@@ -159,7 +160,7 @@ tilemapLevel1 = [
     'B__________________________________BBB_______________________BBBBBBBBB',
     'B_______B______________________BBB______________________',
     'B___________BB______________BBB_____________________________BBBBBBBBBBBB_____________________________________________B_____B______B______B',
-    'B______B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B________E',
+    'B______B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B________F',
     'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBB',
     '___________________________________________________________________________________________________________BBBBBBBBBBBBBBBBBBBBBBBB______BBBBBBBB'
     ]
@@ -174,7 +175,15 @@ tileMapLevel2 = [
     ]
     
    
-    
+def parallax():
+    global level
+    background = pygame.Rect(world.x*50,world.y,1000,1000)
+    pygame.draw.rect(screen, ('black'), (background))
+    if playerRect.colliderect(background):
+        message = font.render("You have completed the level!", True, RED)
+        screen.blit(message, (100,100))
+        level += 1
+        
 level = 1
 blocks = []
 tileSize = 100
@@ -184,9 +193,12 @@ def buildWorld(tilemap):
         for x, tile in enumerate(row):
             if tile == 'B':
                 blocks.append(Block((offset.x + (x*tileSize), offset.y+(y*tileSize)), (tileSize, tileSize), BLUE))
-##            if tile == 'E':
-##                endLevel(endPoint)
-                
+            if tile == 'F':
+                parallax()
+
+
+
+        
 if level == 1:
     buildWorld(tilemapLevel1)
     
@@ -206,6 +218,7 @@ while gameLoop:
     playerRect = pygame.Rect(w/2-playerRect.w/2,h/2-playerRect.h/2,100,100)
     world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
     gravity()
+    parallax()
     inRange=False
     if level == 1:
         for block in blocks:
