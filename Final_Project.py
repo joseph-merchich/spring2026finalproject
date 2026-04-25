@@ -18,6 +18,7 @@ gameLoop = True
 playerSpeed = 5
 grounded = False
 fallSpeed = 9
+playerSize = 150
 
 momentumX = 0
 momentumY = 0
@@ -28,6 +29,8 @@ brimstone = pygame.image.load("brimstone.png")
 lavarock = pygame.image.load("lavarock.png")
 stone = pygame.image.load("Gray stone.png")
 forest = pygame.image.load("Forest background.png")
+hero_facing_forward = pygame.image.load("Amadis.png")
+hero_jumping = pygame.image.load("Amadis_Jumping_Forward.png")
 ##laceration = pygame.image.load("laceration.png")
 ##weakness= pygame.image.load("weakness.png")
 
@@ -45,7 +48,7 @@ w, h = pygame.display.get_surface().get_size()
 mousePos = pygame.mouse.get_pos()
 offset = pygame.math.Vector2(0,0)
 world = pygame.math.Vector2(w/2,h/2)
-playerRect = pygame.Rect(w/2,h/2,100,100)
+playerRect = pygame.Rect(w/2,h/2,playerSize,playerSize)
 playerFeet = playerRect
 ground = pygame.Rect(world.x,world.y+100,1000,100)
 
@@ -111,15 +114,19 @@ def handleInputs():
                 gameLoop = False
 
 def drawPlayer():
+    global grounded, playerRect
+##    pygame.draw.rect(screen, ('orange'), (playerRect),0,5)
     
-    #screen.blit(soulImage,(playerRect.centerx-soulImageSize/2,playerRect.centery-soulImageSize/2),(soulImageX,0,soulImageStep,soulImageH))
+    """screen.blit(hero_facing_forward,(playerRect.centerx,playerRect.centery))"""
     
+    """screen.blit(hero_facing_forward,(playerRect.centerx-playerSize/2,playerRect.centery-playerSize/2))"""
     
+    """,(soulImageX,0,soulImageStep,soulImageH))"""
+    if grounded == False:
+        screen.blit(hero_jumping,(playerRect.x-playerSize,playerRect.y-playerSize))
     
-    
-    pygame.draw.rect(screen, ('orange'), (playerRect),0,5)
-    
-
+    if grounded == True:
+        screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize))
 
 def angleCalc():
     global playerRect,boost,offset,acceptingNewVector,boostVector,mousePos,reticle
@@ -129,7 +136,7 @@ def angleCalc():
     target_offset = direction_vector * 100
     square_pos = playerRect.center + target_offset
     reticle = pygame.Rect(square_pos.x-25,square_pos.y-25,50,50)
-    pygame.draw.rect(screen, ('yellow'), reticle,0,5)
+##    pygame.draw.rect(screen, ('yellow'), reticle,0,5)
     
     if (acceptingNewVector):
         boostVector = direction_vector
@@ -193,8 +200,8 @@ def buildWorld(tilemap):
         for x, tile in enumerate(row):
             if tile == 'B':
                 blocks.append(Block((offset.x + (x*tileSize), offset.y+(y*tileSize)), (tileSize, tileSize), BLUE))
-            if tile == 'F':
-                parallax()
+##            if tile == 'F':
+##                parallax()
 
 
 
@@ -218,7 +225,7 @@ while gameLoop:
     playerRect = pygame.Rect(w/2-playerRect.w/2,h/2-playerRect.h/2,100,100)
     world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
     gravity()
-    parallax()
+##    parallax()
     inRange=False
     if level == 1:
         for block in blocks:
@@ -226,7 +233,7 @@ while gameLoop:
             block.collide(playerRect)
             if block.rect.colliderect(reticle):
                 inRange = True
-        grounded = False
+            grounded = False
     #ground = pygame.Rect(world.x-100,world.y+150,800,200)
     #block1 = Block((world.x-100,world.y+150),(200,200),BLUE)
     
@@ -235,7 +242,7 @@ while gameLoop:
     #offset.y+=momentumV
     #then do all your drawing
     for block in blocks:
-        block.draw(stone)
+        block.draw(grass)
     pygame.display.set_caption(f"{inRange}")
     drawPlayer()
     angleCalc()
