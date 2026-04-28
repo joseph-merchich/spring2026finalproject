@@ -48,9 +48,10 @@ w, h = pygame.display.get_surface().get_size()
 mousePos = pygame.mouse.get_pos()
 offset = pygame.math.Vector2(0,0)
 world = pygame.math.Vector2(w/2,h/2)
-playerRect = pygame.Rect(w/2,h/2,playerSize,playerSize)
+playerRect = pygame.Rect(w/2,h/2,100,500)
 playerFeet = playerRect
 ground = pygame.Rect(world.x,world.y+100,1000,100)
+jumping = False
 
 class Block:
     def __init__(self, position, size, color):
@@ -87,7 +88,7 @@ class Block:
             elif min_overlap == rightOverlap:
                 offset.x -= rightOverlap
 def handleInputs():
-    global gameLoop,boost,world,acceptingNewVector,inRange
+    global gameLoop,boost,world,acceptingNewVector,inRange, jumping
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
         #offset.y += playerSpeed
@@ -106,16 +107,17 @@ def handleInputs():
                 inRange = False
                 boost = 40
                 acceptingNewVector = True
-                
+##                while event.type == MOUSEBUTTONDOWN:
+##                    jumping = True
         if event.type == pygame.QUIT:
             gameLoop = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 gameLoop = False
 
-def drawPlayerJump():
+def drawPlayerRect():
     global grounded, playerRect
-##    pygame.draw.rect(screen, ('orange'), (playerRect),0,5)
+    pygame.draw.rect(screen, ('orange'), (playerRect),0,5)
     
     """screen.blit(hero_facing_forward,(playerRect.centerx,playerRect.centery))"""
     
@@ -206,8 +208,8 @@ def buildWorld(tilemap):
 
 
         
-if level == 1:
-    buildWorld(tilemapLevel1)
+##if level == 1:
+buildWorld(tilemapLevel1)
     
 if level == 2:
     buildWorld(tileMapLevel2)
@@ -217,16 +219,18 @@ while gameLoop:
     screen.fill(SKYBLUE)
     clock.tick(FPS)
     mousePos = pygame.mouse.get_pos()
-    #grounded = False
+    grounded = False
     
     handleInputs()
 
     w, h = pygame.display.get_surface().get_size()
+    #playerRect = pygame.Rect(w/2,h/2,playerSize-10/2,playerSize)
     playerRect = pygame.Rect(w/2-playerRect.w/2,h/2-playerRect.h/2,100,100)
     world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
     gravity()
 ##    parallax()
     inRange=False
+    #jumping = False
     if level == 1:
         for block in blocks:
             block.rect.topleft = (block.position.x + world.x,block.position.y + world.y)
@@ -245,10 +249,13 @@ while gameLoop:
         block.draw(grass)
     pygame.display.set_caption(f"{inRange}")
     angleCalc()
-    if grounded == True:
-        screen.blit(hero_jumping,(playerRect.x-playerSize,playerRect.y-playerSize))
-    else:
-        screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize))
+    #drawPlayerRect()
+    if inRange == False:
+        playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
+        screen.blit(hero_jumping,(playerRect.x-playerSize,playerRect.y-playerSize+50))
+    if inRange == True:
+        screen.blit(hero_facing_forward,(playerRect.x-50,playerRect.y-playerSize))
+        #screen.blit(hero_facing_forward,(playerRect.x,playerRect.y))
 ##    endLevel(endPoint)
     pygame.display.flip()
     
