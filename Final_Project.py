@@ -113,7 +113,7 @@ def handleInputs():
             if event.key == pygame.K_ESCAPE:
                 gameLoop = False
 
-def drawPlayer():
+def drawPlayerJump():
     global grounded, playerRect
 ##    pygame.draw.rect(screen, ('orange'), (playerRect),0,5)
     
@@ -122,11 +122,11 @@ def drawPlayer():
     """screen.blit(hero_facing_forward,(playerRect.centerx-playerSize/2,playerRect.centery-playerSize/2))"""
     
     """,(soulImageX,0,soulImageStep,soulImageH))"""
-    if grounded == False:
-        screen.blit(hero_jumping,(playerRect.x-playerSize,playerRect.y-playerSize))
     
-    if grounded == True:
-        screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize))
+
+def drawPlayerWalk():
+    global grounded, playerRect
+    screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize))
 
 def angleCalc():
     global playerRect,boost,offset,acceptingNewVector,boostVector,mousePos,reticle
@@ -244,8 +244,11 @@ while gameLoop:
     for block in blocks:
         block.draw(grass)
     pygame.display.set_caption(f"{inRange}")
-    drawPlayer()
     angleCalc()
+    if grounded == True:
+        screen.blit(hero_jumping,(playerRect.x-playerSize,playerRect.y-playerSize))
+    else:
+        screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize))
 ##    endLevel(endPoint)
     pygame.display.flip()
     
