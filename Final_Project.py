@@ -250,7 +250,7 @@ while gameLoop:
     pygame.display.set_caption(f"{inRange}")
     angleCalc()
     #drawPlayerRect()
-    if inRange == False and pygame.time.get_ticks() > 50:
+    if inRange == False and pygame.time.get_ticks() > 100:
         playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
         screen.blit(hero_jumping,(playerRect.x-playerSize,playerRect.y-playerSize+50))
     if inRange == True:
