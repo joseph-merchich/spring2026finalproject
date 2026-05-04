@@ -30,7 +30,9 @@ lavarock = pygame.image.load("lavarock.png")
 stone = pygame.image.load("Gray stone.png")
 forest = pygame.image.load("Forest background.png")
 hero_facing_forward = pygame.image.load("Amadis.png")
+hero_facing_left = pygame.image.load("Amadis_facing_backwards.png")
 hero_jumping = pygame.image.load("Amadis_Jumping_Forward.png")
+troll = pygame.image.load("Troll with spear.png")
 ##laceration = pygame.image.load("laceration.png")
 ##weakness= pygame.image.load("weakness.png")
 
@@ -48,10 +50,13 @@ w, h = pygame.display.get_surface().get_size()
 mousePos = pygame.mouse.get_pos()
 offset = pygame.math.Vector2(0,0)
 world = pygame.math.Vector2(w/2,h/2)
-playerRect = pygame.Rect(w/2,h/2,100,500)
+playerRect = pygame.Rect(w/2, h/2, 75, 150)
+#playerRect = pygame.Rect(w/2,h/2,100,500)
 playerFeet = playerRect
 ground = pygame.Rect(world.x,world.y+100,1000,100)
 jumping = False
+directionFacing = "right"
+currentImage = hero_facing_forward
 
 class Block:
     def __init__(self, position, size, color):
@@ -64,10 +69,11 @@ class Block:
         screen.blit(surface,block)
         #pygame.draw.rect(screen, (BLUE), self.rect, 0, 0)
         
-    def collide(self,player):
+    """def collide(self,player):
         global offset,grounded,mousePos,fallSpeed,momentumY,boost,reticle
             
         if self.rect.colliderect(player):
+            grounded = True
             leftOverlap = player.right - self.rect.left
             rightOverlap = self.rect.right - player.left
             topOverlap = player.bottom - self.rect.top
@@ -77,18 +83,124 @@ class Block:
             if min_overlap == topOverlap:
                 momentumY=0
                 offset.y += topOverlap
+                grounded = True
+                momentumY = 0
                 
             elif min_overlap == bottomOverlap:
                 momentumY=0
                 offset.y -= bottomOverlap
                 boost=0
+                grounded = True
                 
             elif min_overlap == leftOverlap:
                 offset.x += leftOverlap
+                grounded = True
             elif min_overlap == rightOverlap:
                 offset.x -= rightOverlap
+                grounded = True"""
+    
+    def collide(self, player):
+        global offset, grounded, mousePos, fallSpeed, momentumY, boost, reticle
+
+        if self.rect.colliderect(player):
+            leftOverlap = player.right - self.rect.left
+            rightOverlap = self.rect.right - player.left
+            topOverlap = player.bottom - self.rect.top
+            bottomOverlap = self.rect.bottom - player.top
+            camin_overlap = min(leftOverlap, rightOverlap, topOverlap, bottomOverlap)
+
+        if min_overlap == topOverlap:
+            momentumY = 0
+            offset.y += topOverlap
+            grounded = True        # <-- ONLY here
+        elif min_overlap == bottomOverlap:
+            momentumY = 0
+            offset.y -= bottomOverlap
+            boost = 0
+        elif min_overlap == leftOverlap:
+            offset.x += leftOverlap
+        elif min_overlap == rightOverlap:
+            offset.x -= rightOverlap
+
+
+
+
+class Enemy:
+    def __init__(self, position, size, brain, offset, speed):
+        self.position = Vector2(position)
+        self.size = size
+        self.rect = pygame.Rect(position, size)
+        self.brain = brain
+        self.offset = Vector2(0,0)
+        self.speed = speed
+        
+    def draw(self):
+        global troll
+
+        if self.brain == 1:
+            screen.blit(troll,self.rect)
+        if self.brain == 2:
+            screen.blit(troll,self.rect)
+        if self.brain == 3:
+            screen.blit(troll,self.rect)
+        if self.brain == 4:
+            screen.blit(troll,self.rect)
+
+    def gravity(self):
+        gravity()
+        
+    def hunt(self):
+        global blocks,paths,screenRect,pathTarget
+        self.rect.center = (world.x + self.offset.x,world.y + self.offset.y)
+        if self.brain < 3:
+            if playerRect.centerx > self.rect.centerx:
+                self.offset.x += self.speed * self.brain
+            if playerRect.centerx < self.rect.centerx:
+                self.offset.x -= self.speed * self.brain
+            if playerRect.centery > self.rect.centery:
+                self.offset.y += self.speed * self.brain
+            if playerRect.centery < self.rect.centery:
+                self.offset.y -= self.speed * self.brain
+        if self.brain == 1:
+                pass
+        if self.brain >= 2:
+            for block in blocks:
+                if block.rect.colliderect(self.rect)& block.rect.colliderect(screenRect):
+                    
+                    
+                    leftOverlap = block.rect.right - self.rect.left
+                    rightOverlap = self.rect.right - block.rect.left
+                    topOverlap = block.rect.bottom - self.rect.top
+                    bottomOverlap = self.rect.bottom - block.rect.top
+                    min_overlap = min(leftOverlap, rightOverlap, topOverlap, bottomOverlap)
+                    
+                    if min_overlap == topOverlap:
+                        self.offset.y += topOverlap
+                        
+                    elif min_overlap == bottomOverlap:
+                        self.offset.y -= bottomOverlap
+                        
+                    elif min_overlap == leftOverlap:
+                        self.offset.x += leftOverlap
+                    elif min_overlap == rightOverlap:
+                        self.offset.x -= rightOverlap
+                    
+        if self.brain >= 3:
+            if pathTarget.x > self.rect.centerx:
+                self.offset.x += self.speed * self.brain
+            if pathTarget.x < self.rect.centerx:
+                self.offset.x -= self.speed * self.brain
+            if pathTarget.y > self.rect.centery:
+                self.offset.y += self.speed * self.brain
+            if pathTarget.y < self.rect.centery:
+                self.offset.y -= self.speed * self.brain
+        if self.brain == 4:
+            pass
+
+
+enemy1 = Enemy((100,100), (troll.size), 1,(0,0,),1)
 def handleInputs():
-    global gameLoop,boost,world,acceptingNewVector,inRange, jumping
+    global gameLoop,boost,world,acceptingNewVector,inRange, jumping, directionFacing
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
         #offset.y += playerSpeed
@@ -97,8 +209,10 @@ def handleInputs():
         #offset.y -= playerSpeed
         pass
     if keys[pygame.K_a]:
+        directionFacing = "left"
         offset.x += playerSpeed
     if keys[pygame.K_d]:
+        directionFacing = "right"
         offset.x -= playerSpeed
     for event in pygame.event.get():
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -114,7 +228,8 @@ def handleInputs():
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 gameLoop = False
-
+                
+#hero = pygame.transform.scale(hero,playerRect.size)
 def drawPlayerRect():
     global grounded, playerRect
     pygame.draw.rect(screen, ('orange'), (playerRect),0,5)
@@ -201,14 +316,37 @@ def buildWorld(tilemap):
     for y, row in enumerate(tilemap):
         for x, tile in enumerate(row):
             if tile == 'B':
+                #blocks.append(Block(x*tileSize, y*tileSize), (tileSize, tileSize), BLUE)
                 blocks.append(Block((offset.x + (x*tileSize), offset.y+(y*tileSize)), (tileSize, tileSize), BLUE))
 ##            if tile == 'F':
 ##                parallax()
 
 
-
-        
+"""def animate():
+    global playerRect, jumping
+    if jumping == True and pygame.time.get_ticks() > 100:
+        playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
+        screen.blit(hero_jumping, (playerRect.centerx - hero_jumping.get_width() // 2, playerRect.centery - hero_jumping.get_height() // 2))
+        #screen.blit(hero_jumping,(playerRect.x-playerSize,playerRect.y-playerSize+50))
+    elif jumping == False:
+        screen.blit(hero_facing_forward,(playerRect.centerx - hero_facing_forward.get_width() // 2, playerRect.centery - hero_facing_forward.get_height() // 2))
+        #screen.blit(hero_facing_forward,(playerRect.x-50,playerRect.y-playerSize))
+    elif directionFacing == "left":
+        screen.blit(hero_facing_left,(playerRect.centerx - hero_facing_left.get_width() // 2, playerRect.centery - hero_facing_left.get_height() // 2))
+        #screen.blit(hero_facing_left,(playerRect.x-playerSize,playerRect.y-playerSize+50))
+    elif directionFacing == 'right':
+        screen.blit(hero_facing_forward,(playerRect.centerx - hero_facing_forward.get_width() // 2, playerRect.centery - hero_facing_forward.get_height() // 2))
+        #screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize+50))"""
+def animate():
+    global playerRect, jumping
+    if jumping == True:
+        screen.blit(hero_jumping, (playerRect.centerx - hero_jumping.get_width() // 2, playerRect.centery - hero_jumping.get_height() // 2))
+    elif directionFacing == "left":
+        screen.blit(hero_facing_left, (playerRect.centerx - hero_facing_left.get_width() // 2, playerRect.centery - hero_facing_left.get_height() // 2))
+    else:
+        screen.blit(hero_facing_forward, (playerRect.centerx - hero_facing_forward.get_width() // 2, playerRect.centery - hero_facing_forward.get_height() // 2))
 ##if level == 1:
+offset.y = 500 - (1 * tileSize) - playerRect.height
 buildWorld(tilemapLevel1)
     
 if level == 2:
@@ -225,19 +363,30 @@ while gameLoop:
 
     w, h = pygame.display.get_surface().get_size()
     #playerRect = pygame.Rect(w/2,h/2,playerSize-10/2,playerSize)
-    playerRect = pygame.Rect(w/2-playerRect.w/2,h/2-playerRect.h/2,100,100)
-    world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
-    gravity()
+    #playerRect = pygame.Rect(w/2-playerRect.w/2,h/2-playerRect.h/2,100,100)
+    #playerRect = pygame.Rect(w/2,h/2,playerSize/2+10,playerSize+60)
+    #playerRect = pygame.Rect(w/2,h/2,100,500)
+    #world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
+    #world = pygame.Rect(playerRect.x+offset.x,playerRect.y+offset.y,playerRect.w,playerRect.h)
+    world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+    
 ##    parallax()
     inRange=False
     #jumping = False
     if level == 1:
+##        for block in blocks:
+##            block.rect.topleft = (block.position.x + world.x,block.position.y + world.y)
+##            block.collide(playerRect)
+##            if block.rect.colliderect(reticle):
+##                inRange = True
+##            grounded = False
         for block in blocks:
-            block.rect.topleft = (block.position.x + world.x,block.position.y + world.y)
-            block.collide(playerRect)
+            block.rect.topleft = ((block.position.x+world.x),(block.position.y+world.y))
+            if block.rect.colliderect(playerRect):
+                block.collide(playerRect)
             if block.rect.colliderect(reticle):
                 inRange = True
-            grounded = False
+    gravity()
     #ground = pygame.Rect(world.x-100,world.y+150,800,200)
     #block1 = Block((world.x-100,world.y+150),(200,200),BLUE)
     
@@ -245,18 +394,51 @@ while gameLoop:
 
     #offset.y+=momentumV
     #then do all your drawing
+##    dirt = pygame.transform.scale(dirt,world.size)
+##    grass = pygame.transform.scale(grass,world.size)
+##    lavarock = pygame.transform.scale(lavarock,world.size)
+##    brimstone = pygame.transform.scale(brimstone,world.size)
+##    troll = pygame.transform.scale(troll,world.size)
+##    hero_facing_forward = pygame.transform.scale(hero_facing_forward, world.size)
+##    hero_jumping = pygame.transform.scale(hero_jumping, world.size)
+    #playerRect = pygame.Rect(w/2,h/2,playerSize,playerSize)
     for block in blocks:
         block.draw(grass)
     pygame.display.set_caption(f"{inRange}")
     angleCalc()
+    enemy1.draw()
+    enemy1.hunt()
+    #enemy1.gravity()
     #drawPlayerRect()
-    if inRange == False and pygame.time.get_ticks() > 100:
-        playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
+    if grounded == False:
+        jumping = True
+    else:
+        jumping = False
+    animate()
+    """if jumping == True and pygame.time.get_ticks() > 100:
+        playerRect = pygame.Rect(w/2,h/2,playerSize/2+10,playerSize/2+10)
+        #playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
+        #currentImage = hero_jumping
         screen.blit(hero_jumping,(playerRect.x-playerSize,playerRect.y-playerSize+50))
+    if directionFacing == "left":
+        playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
+        screen.blit(hero_facing_left,(playerRect.x-playerSize,playerRect.y-playerSize+50))
+        #currentImage = hero_facing_left
+    if directionFacing == "right":
+        playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
+        screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize+50))
+        #currentImage = hero_facing_forward
     if inRange == True:
+        playerRect = pygame.Rect(w/2,h/2,playerSize/2+10,playerSize/2+10)
+        #playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
         screen.blit(hero_facing_forward,(playerRect.x-50,playerRect.y-playerSize))
-        #screen.blit(hero_facing_forward,(playerRect.x,playerRect.y))
+        #currentImage = hero_facing_forward
+        #screen.blit(hero_facing_forward,(playerRect.x,playerRect.y))"""
+    
 ##    endLevel(endPoint)
+    #screen.blit(currentImage,(playerRect.x-playerSize,playerRect.y-playerSize+50))
+    #screen.blit(currentImage,(playerRect.x-50,playerRect.y-playerSize))
+    
     pygame.display.flip()
     
 
