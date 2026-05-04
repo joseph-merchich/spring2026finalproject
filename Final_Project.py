@@ -50,7 +50,7 @@ w, h = pygame.display.get_surface().get_size()
 mousePos = pygame.mouse.get_pos()
 offset = pygame.math.Vector2(0,0)
 world = pygame.math.Vector2(w/2,h/2)
-playerRect = pygame.Rect(w/2, h/2, 75, 150)
+playerRect = pygame.Rect(w/2, h/2, 75, 250)
 #playerRect = pygame.Rect(w/2,h/2,100,500)
 playerFeet = playerRect
 ground = pygame.Rect(world.x,world.y+100,1000,100)
@@ -107,20 +107,23 @@ class Block:
             rightOverlap = self.rect.right - player.left
             topOverlap = player.bottom - self.rect.top
             bottomOverlap = self.rect.bottom - player.top
-            camin_overlap = min(leftOverlap, rightOverlap, topOverlap, bottomOverlap)
+            #min_overlap = min(leftOverlap, rightOverlap, topOverlap, bottomOverlap)
+            min_overlap = min(topOverlap, bottomOverlap, leftOverlap, rightOverlap)
+            min(topOverlap, bottomOverlap, leftOverlap, rightOverlap)
 
-        if min_overlap == topOverlap:
-            momentumY = 0
-            offset.y += topOverlap
-            grounded = True        # <-- ONLY here
-        elif min_overlap == bottomOverlap:
-            momentumY = 0
-            offset.y -= bottomOverlap
-            boost = 0
-        elif min_overlap == leftOverlap:
-            offset.x += leftOverlap
-        elif min_overlap == rightOverlap:
-            offset.x -= rightOverlap
+            if min_overlap == topOverlap:
+                if not grounded:
+                    momentumY = 0
+                    offset.y += topOverlap
+                    grounded = True        # <-- ONLY here
+            elif min_overlap == bottomOverlap:
+                momentumY = 0
+                offset.y -= bottomOverlap
+                boost = 0
+            elif min_overlap == leftOverlap:
+                offset.x += leftOverlap
+            elif min_overlap == rightOverlap:
+                offset.x -= rightOverlap
 
 
 
@@ -373,20 +376,21 @@ while gameLoop:
 ##    parallax()
     inRange=False
     #jumping = False
-    if level == 1:
+    #if level == 1:
 ##        for block in blocks:
 ##            block.rect.topleft = (block.position.x + world.x,block.position.y + world.y)
 ##            block.collide(playerRect)
 ##            if block.rect.colliderect(reticle):
 ##                inRange = True
 ##            grounded = False
-        for block in blocks:
-            block.rect.topleft = ((block.position.x+world.x),(block.position.y+world.y))
-            if block.rect.colliderect(playerRect):
-                block.collide(playerRect)
-            if block.rect.colliderect(reticle):
-                inRange = True
     gravity()
+    for block in blocks:
+        block.rect.topleft = ((block.position.x+world.x),(block.position.y+world.y))
+        if block.rect.colliderect(playerRect):
+            block.collide(playerRect)
+        if block.rect.colliderect(reticle):
+            inRange = True
+    
     #ground = pygame.Rect(world.x-100,world.y+150,800,200)
     #block1 = Block((world.x-100,world.y+150),(200,200),BLUE)
     
