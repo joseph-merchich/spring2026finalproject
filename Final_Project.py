@@ -109,7 +109,7 @@ class Block:
             bottomOverlap = self.rect.bottom - player.top
             #min_overlap = min(leftOverlap, rightOverlap, topOverlap, bottomOverlap)
             min_overlap = min(topOverlap, bottomOverlap, leftOverlap, rightOverlap)
-            min(topOverlap, bottomOverlap, leftOverlap, rightOverlap)
+            #min(topOverlap, bottomOverlap, leftOverlap, rightOverlap)
 
             if min_overlap == topOverlap:
                 if not grounded:
@@ -149,8 +149,14 @@ class Enemy:
         if self.brain == 4:
             screen.blit(troll,self.rect)
 
-    def gravity(self):
-        gravity()
+    def EnemyGravity(self):
+        global offset,grounded,fallSpeed,momentumY
+    
+        if grounded == False:
+            if momentumY<fallSpeed:
+                momentumY += 1
+            offset.y-=momentumY
+        
         
     def hunt(self):
         global blocks,paths,screenRect,pathTarget
@@ -224,6 +230,7 @@ def handleInputs():
                 inRange = False
                 boost = 40
                 acceptingNewVector = True
+                jumping = True
 ##                while event.type == MOUSEBUTTONDOWN:
 ##                    jumping = True
         if event.type == pygame.QUIT:
@@ -412,7 +419,7 @@ while gameLoop:
     angleCalc()
     enemy1.draw()
     enemy1.hunt()
-    #enemy1.gravity()
+    enemy1.EnemyGravity()
     #drawPlayerRect()
     if grounded == False:
         jumping = True
