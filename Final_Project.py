@@ -109,7 +109,7 @@ class Block:
             bottomOverlap = self.rect.bottom - player.top
             #min_overlap = min(leftOverlap, rightOverlap, topOverlap, bottomOverlap)
             min_overlap = min(topOverlap, bottomOverlap, leftOverlap, rightOverlap)
-            #min(topOverlap, bottomOverlap, leftOverlap, rightOverlap)
+            min(topOverlap, bottomOverlap, leftOverlap, rightOverlap)
 
             if min_overlap == topOverlap:
                 if not grounded:
@@ -367,6 +367,7 @@ while gameLoop:
     screen.fill(SKYBLUE)
     clock.tick(FPS)
     mousePos = pygame.mouse.get_pos()
+    frameCorrection = False
     grounded = False
     
     handleInputs()
@@ -418,8 +419,8 @@ while gameLoop:
     pygame.display.set_caption(f"{inRange}")
     angleCalc()
     enemy1.draw()
-    enemy1.hunt()
     enemy1.EnemyGravity()
+    enemy1.hunt()
     #drawPlayerRect()
     if grounded == False:
         jumping = True
