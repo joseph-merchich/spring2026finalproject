@@ -100,7 +100,7 @@ class Block:
                 grounded = True"""
     
     def collide(self, player):
-        global offset, grounded, mousePos, fallSpeed, momentumY, boost, reticle
+        global offset, grounded, mousePos, fallSpeed, momentumY, boost, reticle, frameCorrection
 
         if self.rect.colliderect(player):
             leftOverlap = player.right - self.rect.left
@@ -112,10 +112,11 @@ class Block:
             min(topOverlap, bottomOverlap, leftOverlap, rightOverlap)
 
             if min_overlap == topOverlap:
-                if not grounded:
+                if not frameCorrection:
                     momentumY = 0
                     offset.y += topOverlap
                     grounded = True        # <-- ONLY here
+                    frameCorrection = True
             elif min_overlap == bottomOverlap:
                 momentumY = 0
                 offset.y -= bottomOverlap
@@ -260,7 +261,7 @@ def angleCalc():
     direction_vector = Vector2(mousePos) - playerRect.center
     if direction_vector.length() > 0:
         direction_vector = direction_vector.normalize()
-    target_offset = direction_vector * 100
+    target_offset = direction_vector * 150
     square_pos = playerRect.center + target_offset
     reticle = pygame.Rect(square_pos.x-25,square_pos.y-25,50,50)
 ##    pygame.draw.rect(screen, ('yellow'), reticle,0,5)
@@ -292,7 +293,7 @@ def gravity():
 tilemapLevel1 = [
     'B_______B______________________________BBB______________',
     'B__________________________________BBB_______________________BBBBBBBBB',
-    'B_______B______________________BBB______________________',
+    'B______B________________________BBB______________________',
     'B___________BB______________BBB_____________________________BBBBBBBBBBBB_____________________________________________B_____B______B______B',
     'B______B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B________F',
     'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBB',
@@ -419,7 +420,7 @@ while gameLoop:
     pygame.display.set_caption(f"{inRange}")
     angleCalc()
     enemy1.draw()
-    enemy1.EnemyGravity()
+    #enemy1.EnemyGravity()
     enemy1.hunt()
     #drawPlayerRect()
     if grounded == False:
@@ -427,25 +428,6 @@ while gameLoop:
     else:
         jumping = False
     animate()
-    """if jumping == True and pygame.time.get_ticks() > 100:
-        playerRect = pygame.Rect(w/2,h/2,playerSize/2+10,playerSize/2+10)
-        #playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
-        #currentImage = hero_jumping
-        screen.blit(hero_jumping,(playerRect.x-playerSize,playerRect.y-playerSize+50))
-    if directionFacing == "left":
-        playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
-        screen.blit(hero_facing_left,(playerRect.x-playerSize,playerRect.y-playerSize+50))
-        #currentImage = hero_facing_left
-    if directionFacing == "right":
-        playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
-        screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize+50))
-        #currentImage = hero_facing_forward
-    if inRange == True:
-        playerRect = pygame.Rect(w/2,h/2,playerSize/2+10,playerSize/2+10)
-        #playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
-        screen.blit(hero_facing_forward,(playerRect.x-50,playerRect.y-playerSize))
-        #currentImage = hero_facing_forward
-        #screen.blit(hero_facing_forward,(playerRect.x,playerRect.y))"""
     
 ##    endLevel(endPoint)
     #screen.blit(currentImage,(playerRect.x-playerSize,playerRect.y-playerSize+50))
