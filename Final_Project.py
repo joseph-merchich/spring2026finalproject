@@ -29,7 +29,7 @@ brimstone = pygame.image.load("brimstone.png")
 lavarock = pygame.image.load("lavarock.png")
 stone = pygame.image.load("Gray stone.png")
 forest = pygame.image.load("Forest background.png")
-hero_facing_forward = pygame.image.load("Amadis.png")
+running_sheet = pygame.image.load("Running Animation.png")
 hero_facing_left = pygame.image.load("Amadis_facing_backwards.png")
 hero_jumping = pygame.image.load("Amadis_Jumping_Forward.png")
 troll = pygame.image.load("Troll with spear.png")
@@ -55,8 +55,15 @@ playerRect = pygame.Rect(w/2, h/2, 75, 250)
 playerFeet = playerRect
 ground = pygame.Rect(world.x,world.y+100,1000,100)
 jumping = False
+walking = True
 directionFacing = "right"
-currentImage = hero_facing_forward
+heroSheetW, heroSheetH = running_sheet.get_size()
+heroSheetRows = 1
+heroSheetColumns = 2
+heroImageX = 0
+heroImageY = 0
+heroSheetCounter = 0
+frameIndex = 0
 
 class Block:
     def __init__(self, position, size, color):
@@ -210,7 +217,8 @@ class Enemy:
 
 enemy1 = Enemy((100,100), (troll.size), 1,(0,0,),1)
 def handleInputs():
-    global gameLoop,boost,world,acceptingNewVector,inRange, jumping, directionFacing
+    global gameLoop,boost,world,acceptingNewVector,inRange, jumping, directionFacing, walking
+    walking = False
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
         #offset.y += playerSpeed
@@ -221,9 +229,11 @@ def handleInputs():
     if keys[pygame.K_a]:
         directionFacing = "left"
         offset.x += playerSpeed
+        walking = True
     if keys[pygame.K_d]:
         directionFacing = "right"
         offset.x -= playerSpeed
+        walking = True
     for event in pygame.event.get():
         if event.type == pygame.MOUSEBUTTONDOWN:
             #print(f"Mouse button {event.button} clicked at {event.pos}")
@@ -332,6 +342,47 @@ def buildWorld(tilemap):
 ##            if tile == 'F':
 ##                parallax()
 
+def animate():
+    global heroImageX,heroImageY,heroSheetCounter,playerRect,heroSheetW, hero_jumping
+    global heroSheetH,heroSheetColumns,scaledHero,subArea,directionFacing,walking,frameIndex
+    heroImageY = 0
+    heroSheetCounter +=4
+    if jumping == True:
+        hero_jumping = pygame.transform.scale(hero_jumping, playerRect.size)
+        screen.blit(hero_jumping, (playerRect.centerx - hero_jumping.get_width() // 2, playerRect.centery - hero_jumping.get_height() // 2))
+        return
+    if heroSheetCounter % (heroSheetW/heroSheetColumns) == 0:
+         heroImageX = frameIndex * (heroSheetW / heroSheetColumns)
+        #heroImageX=heroSheetCounter
+    if heroSheetCounter>=heroSheetW-(heroSheetW/heroSheetColumns):
+        heroSheetCounter=0
+        frameIndex = 1 if frameIndex == 0 else 0
+        
+    if not walking:
+        heroImageX = 0
+        heroSheetCounter = 0
+        frameIndex = 0
+        walking = False
+        
+    subArea = running_sheet.subsurface((heroImageX,heroImageY,(heroSheetW/heroSheetColumns),(heroSheetH/heroSheetRows)))
+    if directionFacing == "left":
+        
+        #heroImageY = (heroSheetH/heroSheetRows)*3
+        flippedSub = pygame.transform.flip(subArea, True, False)
+        #pygame.transform.flip(subArea, True, False)
+        #pygame.transform.scale(subArea, playerRect.size)
+        #screen.blit(flippedSub,playerRect)
+        scaledSub = pygame.transform.scale(flippedSub, playerRect.size)
+        screen.blit(scaledSub, playerRect)
+    #if directionFacing == "right":
+        heroImageY = 0
+        #heroImageY = (heroSheetH/heroSheetRows)*2
+        #scaledHero = pygame.transform.scale(subArea,playerRect.size)
+    else:
+        """"pygame.transform.scale(subArea, playerRect.size)
+        screen.blit(subArea,playerRect)"""
+        scaledSub = pygame.transform.scale(subArea, playerRect.size)
+        screen.blit(scaledSub, playerRect)
 
 """def animate():
     global playerRect, jumping
@@ -348,14 +399,14 @@ def buildWorld(tilemap):
     elif directionFacing == 'right':
         screen.blit(hero_facing_forward,(playerRect.centerx - hero_facing_forward.get_width() // 2, playerRect.centery - hero_facing_forward.get_height() // 2))
         #screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize+50))"""
-def animate():
+"""def animate():
     global playerRect, jumping
     if jumping == True:
         screen.blit(hero_jumping, (playerRect.centerx - hero_jumping.get_width() // 2, playerRect.centery - hero_jumping.get_height() // 2))
     elif directionFacing == "left":
         screen.blit(hero_facing_left, (playerRect.centerx - hero_facing_left.get_width() // 2, playerRect.centery - hero_facing_left.get_height() // 2))
     else:
-        screen.blit(hero_facing_forward, (playerRect.centerx - hero_facing_forward.get_width() // 2, playerRect.centery - hero_facing_forward.get_height() // 2))
+        screen.blit(hero_facing_forward, (playerRect.centerx - hero_facing_forward.get_width() // 2, playerRect.centery - hero_facing_forward.get_height() // 2))"""
 ##if level == 1:
 offset.y = 500 - (1 * tileSize) - playerRect.height
 buildWorld(tilemapLevel1)
