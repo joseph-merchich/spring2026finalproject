@@ -33,6 +33,7 @@ running_sheet = pygame.image.load("Running Animation.png")
 hero_facing_left = pygame.image.load("Amadis_facing_backwards.png")
 hero_jumping = pygame.image.load("Amadis_Jumping_Forward.png")
 troll = pygame.image.load("Troll with spear.png")
+
 ##laceration = pygame.image.load("laceration.png")
 ##weakness= pygame.image.load("weakness.png")
 
@@ -64,7 +65,7 @@ heroImageX = 0
 heroImageY = 0
 heroSheetCounter = 0
 frameIndex = 0
-
+troll = pygame.transform.scale(troll, playerRect.size)
 class Block:
     def __init__(self, position, size, color):
         self.position = Vector2(position)
