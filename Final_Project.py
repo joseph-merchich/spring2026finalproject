@@ -4,6 +4,7 @@ from pygame.math import Vector2
 pygame.init()
 pygame.mixer.init()
 font = pygame.font.SysFont(None, 40)
+pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
 
 SKYBLUE = (75,191,255)
 BLUE = (0,0,225)
