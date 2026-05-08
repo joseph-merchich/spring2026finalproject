@@ -353,10 +353,12 @@ def animate():
     global heroSheetH,heroSheetColumns,scaledHero,subArea,directionFacing,walking,frameIndex
     heroImageY = 0
     heroSheetCounter +=4
-    if jumping == True:
-        hero_jumping = pygame.transform.scale(hero_jumping, playerRect.size)
-        screen.blit(hero_jumping, (playerRect.centerx - hero_jumping.get_width() // 2, playerRect.centery - hero_jumping.get_height() // 2))
-        return
+    """if jumping == True:
+        if directionFacing = 'left':
+            hero_jumping = pygame.transform.scale(hero_jumping, playerRect.size)
+            hero_jumping = pygame.transform.flip
+            screen.blit(hero_jumping, (playerRect.centerx - hero_jumping.get_width() // 2, playerRect.centery - hero_jumping.get_height() // 2))
+        return"""
     if heroSheetCounter % (heroSheetW/heroSheetColumns) == 0:
          heroImageX = frameIndex * (heroSheetW / heroSheetColumns)
         #heroImageX=heroSheetCounter
@@ -370,11 +372,15 @@ def animate():
         frameIndex = 0
         walking = False
         
-    if stabbing == True:
+    """if stabbing == True:
         scaledStab = pygame.transform.scale(stab, playerRect.size)
-        screen.blit(scaledStab, playerRect)
-        
-    subArea = running_sheet.subsurface((heroImageX,heroImageY,(heroSheetW/heroSheetColumns),(heroSheetH/heroSheetRows)))
+        screen.blit(scaledStab, playerRect)"""
+    if jumping == True:    
+        subArea = hero_jumping
+    elif stabbing == True:
+        subArea = stab
+    else:
+        subArea = running_sheet.subsurface((heroImageX,heroImageY,(heroSheetW/heroSheetColumns),(heroSheetH/heroSheetRows)))
     if directionFacing == "left":
         
         #heroImageY = (heroSheetH/heroSheetRows)*3
@@ -431,7 +437,7 @@ while gameLoop:
     mousePos = pygame.mouse.get_pos()
     frameCorrection = False
     grounded = False
-    
+    stabbing = False
     handleInputs()
 
     w, h = pygame.display.get_surface().get_size()
