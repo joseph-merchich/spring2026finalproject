@@ -33,6 +33,7 @@ running_sheet = pygame.image.load("Running Animation.png")
 hero_facing_left = pygame.image.load("Amadis_facing_backwards.png")
 hero_jumping = pygame.image.load("Amadis_Jumping_Forward.png")
 troll = pygame.image.load("Troll with spear.png")
+stab = pygame.image.load("stab.png")
 
 ##laceration = pygame.image.load("laceration.png")
 ##weakness= pygame.image.load("weakness.png")
@@ -51,12 +52,14 @@ w, h = pygame.display.get_surface().get_size()
 mousePos = pygame.mouse.get_pos()
 offset = pygame.math.Vector2(0,0)
 world = pygame.math.Vector2(w/2,h/2)
-playerRect = pygame.Rect(w/2, h/2, 100, 250)
+playerRect = pygame.Rect(w/2, h/2, 114, 128)
 #playerRect = pygame.Rect(w/2,h/2,100,500)
 playerFeet = playerRect
 ground = pygame.Rect(world.x,world.y+100,1000,100)
 jumping = False
 walking = True
+stabbing = False
+slicing = False
 directionFacing = "right"
 heroSheetW, heroSheetH = running_sheet.get_size()
 heroSheetRows = 1
@@ -218,7 +221,7 @@ class Enemy:
 
 enemy1 = Enemy((100,100), (troll.size), 1,(0,0,),1)
 def handleInputs():
-    global gameLoop,boost,world,acceptingNewVector,inRange, jumping, directionFacing, walking
+    global gameLoop,boost,world,acceptingNewVector,inRange, jumping, directionFacing, walking, stabbing
     walking = False
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
@@ -235,6 +238,8 @@ def handleInputs():
         directionFacing = "right"
         offset.x -= playerSpeed
         walking = True
+    if keys[pygame.K_RIGHT]:
+        stabbing = True
     for event in pygame.event.get():
         if event.type == pygame.MOUSEBUTTONDOWN:
             #print(f"Mouse button {event.button} clicked at {event.pos}")
@@ -305,9 +310,9 @@ tilemapLevel1 = [
     'B_______B______________________________BBB______________',
     'B__________________________________BBB_______________________BBBBBBBBB',
     'B______B________________________BBB______________________',
-    'B___________BB______________BBB_____________________________BBBBBBBBBBBB_____________________________________________B_____B______B______B',
-    'B______B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B________F',
-    'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBB',
+    'B___________BB______________BBB_____________________________BBBBBBBBBBBB_____________________________________________B_____B______B______B_____BBBBBBBBBBBBBBBBBB',
+    'B______B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B_______________________',
+    'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBBBBBBBBBBBBBBBB',
     '___________________________________________________________________________________________________________BBBBBBBBBBBBBBBBBBBBBBBB______BBBBBBBB'
     ]
 
@@ -344,7 +349,7 @@ def buildWorld(tilemap):
 ##                parallax()
 
 def animate():
-    global heroImageX,heroImageY,heroSheetCounter,playerRect,heroSheetW, hero_jumping
+    global heroImageX,heroImageY,heroSheetCounter,playerRect,heroSheetW, hero_jumping,stab
     global heroSheetH,heroSheetColumns,scaledHero,subArea,directionFacing,walking,frameIndex
     heroImageY = 0
     heroSheetCounter +=4
@@ -364,6 +369,10 @@ def animate():
         heroSheetCounter = 0
         frameIndex = 0
         walking = False
+        
+    if stabbing == True:
+        scaledStab = pygame.transform.scale(stab, playerRect.size)
+        screen.blit(scaledStab, playerRect)
         
     subArea = running_sheet.subsurface((heroImageX,heroImageY,(heroSheetW/heroSheetColumns),(heroSheetH/heroSheetRows)))
     if directionFacing == "left":
