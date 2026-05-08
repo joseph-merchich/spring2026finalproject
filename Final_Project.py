@@ -34,6 +34,8 @@ hero_facing_left = pygame.image.load("Amadis_facing_backwards.png")
 hero_jumping = pygame.image.load("Amadis_Jumping_Forward.png")
 troll = pygame.image.load("Troll with spear.png")
 stab = pygame.image.load("stab.png")
+up_slice = pygame.image.load("Up slice.png")
+down_slice = pygame.image.load("Down slice.png")
 
 ##laceration = pygame.image.load("laceration.png")
 ##weakness= pygame.image.load("weakness.png")
@@ -42,6 +44,7 @@ boost = 10
 boostVector = (0,0)
 acceptingNewVector = True
 inRange=False
+attackTimer = 0
 
 reticle = pygame.Rect(0,0,0,0)
 
@@ -59,7 +62,8 @@ ground = pygame.Rect(world.x,world.y+100,1000,100)
 jumping = False
 walking = True
 stabbing = False
-slicing = False
+slicing_up = False
+slicing_down = False
 directionFacing = "right"
 heroSheetW, heroSheetH = running_sheet.get_size()
 heroSheetRows = 1
@@ -221,7 +225,7 @@ class Enemy:
 
 enemy1 = Enemy((100,100), (troll.size), 1,(0,0,),1)
 def handleInputs():
-    global gameLoop,boost,world,acceptingNewVector,inRange, jumping, directionFacing, walking, stabbing
+    global gameLoop,boost,world,acceptingNewVector,inRange, jumping, directionFacing, walking, stabbing, slicing_up, slicing_down, attackTimer
     walking = False
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
@@ -238,8 +242,6 @@ def handleInputs():
         directionFacing = "right"
         offset.x -= playerSpeed
         walking = True
-    if keys[pygame.K_RIGHT]:
-        stabbing = True
     for event in pygame.event.get():
         if event.type == pygame.MOUSEBUTTONDOWN:
             #print(f"Mouse button {event.button} clicked at {event.pos}")
@@ -253,6 +255,15 @@ def handleInputs():
         if event.type == pygame.QUIT:
             gameLoop = False
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RIGHT:
+                stabbing = True
+                attackTimer = pygame.time.get_ticks()
+            if event.key == pygame.K_UP:
+                slicing_up = True
+                attackTimer = pygame.time.get_ticks()
+            if event.key == pygame.K_DOWN:
+                slicing_down = True
+                attackTimer = pygame.time.get_ticks()
             if event.key == pygame.K_ESCAPE:
                 gameLoop = False
                 
@@ -349,8 +360,8 @@ def buildWorld(tilemap):
 ##                parallax()
 
 def animate():
-    global heroImageX,heroImageY,heroSheetCounter,playerRect,heroSheetW, hero_jumping,stab
-    global heroSheetH,heroSheetColumns,scaledHero,subArea,directionFacing,walking,frameIndex
+    global heroImageX,heroImageY,heroSheetCounter,playerRect,heroSheetW, hero_jumping,stab,up_slice
+    global heroSheetH,heroSheetColumns,scaledHero,subArea,directionFacing,walking,stabbing,slicing_up,slicing_down,frameIndex,attackTimer
     heroImageY = 0
     heroSheetCounter +=4
     """if jumping == True:
@@ -365,7 +376,26 @@ def animate():
     if heroSheetCounter>=heroSheetW-(heroSheetW/heroSheetColumns):
         heroSheetCounter=0
         frameIndex = 1 if frameIndex == 0 else 0
-        
+    if jumping == True:    
+        subArea = hero_jumping
+    elif stabbing == True:
+        if pygame.time.get_ticks() - attackTimer > 100:
+            stabbing = False
+        else:
+            subArea = stab
+    elif slicing_up == True:
+        if pygame.time.get_ticks() - attackTimer > 100:
+            slicing_up = False
+        else:
+            subArea = up_slice
+    elif slicing_down == True:
+        if pygame.time.get_ticks() - attackTimer > 100:
+            slicing_down = False
+        else:
+            subArea = down_slice
+    else:
+        subArea = running_sheet.subsurface((heroImageX,heroImageY,(heroSheetW/heroSheetColumns),(heroSheetH/heroSheetRows)))
+    
     if not walking:
         heroImageX = 0
         heroSheetCounter = 0
@@ -375,12 +405,6 @@ def animate():
     """if stabbing == True:
         scaledStab = pygame.transform.scale(stab, playerRect.size)
         screen.blit(scaledStab, playerRect)"""
-    if jumping == True:    
-        subArea = hero_jumping
-    elif stabbing == True:
-        subArea = stab
-    else:
-        subArea = running_sheet.subsurface((heroImageX,heroImageY,(heroSheetW/heroSheetColumns),(heroSheetH/heroSheetRows)))
     if directionFacing == "left":
         
         #heroImageY = (heroSheetH/heroSheetRows)*3
@@ -437,8 +461,11 @@ while gameLoop:
     mousePos = pygame.mouse.get_pos()
     frameCorrection = False
     grounded = False
-    stabbing = False
+##    stabbing = False
+##    slicing_up = False
+##    slicing_down = False
     handleInputs()
+    animate()
 
     w, h = pygame.display.get_surface().get_size()
     #playerRect = pygame.Rect(w/2,h/2,playerSize-10/2,playerSize)
@@ -494,7 +521,6 @@ while gameLoop:
         jumping = True
     else:
         jumping = False
-    animate()
     
 ##    endLevel(endPoint)
     #screen.blit(currentImage,(playerRect.x-playerSize,playerRect.y-playerSize+50))
