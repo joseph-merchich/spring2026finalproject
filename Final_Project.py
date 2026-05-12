@@ -1,4 +1,4 @@
-import pygame,random,math
+import pygame,random,math,json
 from pygame.locals import *
 from pygame.math import Vector2
 pygame.init()
@@ -16,6 +16,7 @@ RED = (255,0,0)
 PEACH = (255,176,156)
 
 gameLoop = True
+gameMode = 0
 playerSpeed = 5
 grounded = False
 fallSpeed = 9
@@ -23,6 +24,8 @@ playerSize = 150
 
 momentumX = 0
 momentumY = 0
+momentum = pygame.math.Vector2(0,0)
+data = {}
 
 grass = pygame.image.load("grass.png")
 dirt = pygame.image.load("dirt.png")
@@ -74,6 +77,7 @@ heroImageY = 0
 heroSheetCounter = 0
 frameIndex = 0
 troll = pygame.transform.scale(troll, playerRect.size)
+enemies = []
 class Block:
     def __init__(self, position, size, color):
         self.position = Vector2(position)
@@ -146,11 +150,12 @@ class Block:
 
 
 class Enemy:
-    def __init__(self, position, size, brain, offset, speed):
+    def __init__(self, position, size, brain, health, offset, speed):
         self.position = Vector2(position)
         self.size = size
         self.rect = pygame.Rect(position, size)
         self.brain = brain
+        self.health = health
         self.offset = Vector2(0,0)
         self.speed = speed
         
@@ -224,7 +229,7 @@ class Enemy:
             pass
 
 
-enemy1 = Enemy((100,100), (troll.size), 1,(0,0,),1)
+#enemy1 = Enemy((100,100), (troll.size), 1,1,(0,0,),1)
 def handleInputs():
     global gameLoop,boost,world,acceptingNewVector,inRange, jumping, directionFacing, walking, stabbing, slicing_up, slicing_down, attackTimer
     walking = False
@@ -243,7 +248,7 @@ def handleInputs():
         directionFacing = "right"
         offset.x -= playerSpeed
         walking = True
-    for event in pygame.event.get():
+    for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN:
             #print(f"Mouse button {event.button} clicked at {event.pos}")
             if inRange==True:
@@ -284,6 +289,74 @@ def drawPlayerWalk():
     global grounded, playerRect
     screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize))
 
+
+def fightEnemy():
+    global playerRect, enemies
+    for enemy in enemies:
+        if playerRect.colliderect(enemy.rect) and (stabbing or slicing_up or slicing_down) == True:
+            enemy.offset.x -= 50
+            enemy.health -= 1
+    
+
+    
+def loadGame():
+    global data,gameMode
+    try:
+        # the file already exists
+        with open('save.txt') as load_file:
+            data = json.load(load_file)
+            offset.x = data["x"] - playerRect.x
+            offset.y = data["y"] - playerRect.y
+            momentum.x = data["momentumX"]
+            momentum.y = data["momentumY"]
+            #world = pygame.Rect(Vector2(data["x"],data["y"]),50,50)
+    except:
+        # create the file and store initial values
+        with open('save.txt', 'w') as store_file:
+            json.dump(data, store_file)
+    gameMode=1
+
+
+def newGame():
+    global data,gameMode
+    with open('save.txt', 'w') as store_file:
+        json.dump(data, store_file)
+    gameMode=1
+
+buttons = []
+messages = []
+
+button0 = buttons.append(pygame.Rect(100,100,300,50))
+message0 = messages.append("New Game")
+
+button1 = buttons.append(pygame.Rect(100,300,300,50))
+message1 = messages.append("Resume Game")
+
+def drawButtons():
+    global buttons,messages,data
+    buttons[0] = pygame.Rect(w/2-buttons[0].w/2,h/2-buttons[0].h/2,500,50)
+    buttons[1] = pygame.Rect(w/2-buttons[1].w/2,h/2+100,500,50)
+
+    for button in buttons:
+        pygame.draw.rect(screen, ('lightgray'), button,0,5)
+        if button.contains(mousePos,(1,1)):
+            pygame.draw.rect(screen, ('lightblue'), button,0,5)
+            if button==buttons[0]:
+                for event in events:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        newGame()
+            if button==buttons[1]:
+                for event in events:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        loadGame()
+                    
+            
+        message = f"{messages[buttons.index(button)]}"
+        textBox = font.render(message, True,'darkblue')
+        screen.blit(textBox, (button.centerx - textBox.get_rect().w/2,button.centery - textBox.get_rect().h/2))  
+
+
+
 def angleCalc():
     global playerRect,boost,offset,acceptingNewVector,boostVector,mousePos,reticle
     direction_vector = Vector2(mousePos) - playerRect.center
@@ -319,7 +392,7 @@ def gravity():
 ##        level += 1
         
 tilemapLevel1 = [
-    'B_______B______________________________BBB______________',
+    'B_______B______________________________BBB_______________________E',
     'B__________________________________BBB_______________________BBBBBBBBB',
     'B______B________________________BBB______________________',
     'B___________BB______________BBB_____________________________BBBBBBBBBBBB_____________________________________________B_____B______B______B_____BBBBBBBBBBBBBBBBBB',
@@ -357,6 +430,8 @@ def buildWorld(tilemap):
             if tile == 'B':
                 #blocks.append(Block(x*tileSize, y*tileSize), (tileSize, tileSize), BLUE)
                 blocks.append(Block((offset.x + (x*tileSize), offset.y+(y*tileSize)), (tileSize, tileSize), BLUE))
+            elif tile == 'E':
+                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.size, 1,1, (0,0), 1))
 ##            if tile == 'F':
 ##                parallax()
 
@@ -455,30 +530,36 @@ buildWorld(tilemapLevel1)
 if level == 2:
     buildWorld(tileMapLevel2)
 world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
+
 while gameLoop:
-    #perform all physics calculations first
     screen.fill(SKYBLUE)
     clock.tick(FPS)
     mousePos = pygame.mouse.get_pos()
-    frameCorrection = False
-    grounded = False
+    events = pygame.event.get()
+    handleInputs()
+    if gameMode == 0:
+        drawButtons()
+    elif gameMode == 1:
+    #perform all physics calculations first
+        frameCorrection = False
+        grounded = False
 ##    stabbing = False
 ##    slicing_up = False
 ##    slicing_down = False
-    handleInputs()
-    animate()
+        animate()
+    
 
-    w, h = pygame.display.get_surface().get_size()
+        w, h = pygame.display.get_surface().get_size()
     #playerRect = pygame.Rect(w/2,h/2,playerSize-10/2,playerSize)
     #playerRect = pygame.Rect(w/2-playerRect.w/2,h/2-playerRect.h/2,100,100)
     #playerRect = pygame.Rect(w/2,h/2,playerSize/2+10,playerSize+60)
     #playerRect = pygame.Rect(w/2,h/2,100,500)
     #world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
     #world = pygame.Rect(playerRect.x+offset.x,playerRect.y+offset.y,playerRect.w,playerRect.h)
-    world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+        world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
     
 ##    parallax()
-    inRange=False
+        inRange=False
     #jumping = False
     #if level == 1:
 ##        for block in blocks:
@@ -487,13 +568,13 @@ while gameLoop:
 ##            if block.rect.colliderect(reticle):
 ##                inRange = True
 ##            grounded = False
-    gravity()
-    for block in blocks:
-        block.rect.topleft = ((block.position.x+world.x),(block.position.y+world.y))
-        if block.rect.colliderect(playerRect):
-            block.collide(playerRect)
-        if block.rect.colliderect(reticle):
-            inRange = True
+        gravity()
+        for block in blocks:
+            block.rect.topleft = ((block.position.x+world.x),(block.position.y+world.y))
+            if block.rect.colliderect(playerRect):
+                block.collide(playerRect)
+            if block.rect.colliderect(reticle):
+                inRange = True
     
     #ground = pygame.Rect(world.x-100,world.y+150,800,200)
     #block1 = Block((world.x-100,world.y+150),(200,200),BLUE)
@@ -510,18 +591,21 @@ while gameLoop:
 ##    hero_facing_forward = pygame.transform.scale(hero_facing_forward, world.size)
 ##    hero_jumping = pygame.transform.scale(hero_jumping, world.size)
     #playerRect = pygame.Rect(w/2,h/2,playerSize,playerSize)
-    for block in blocks:
-        block.draw(grass)
-    pygame.display.set_caption(f"{inRange}")
-    angleCalc()
-    enemy1.draw()
-    #enemy1.EnemyGravity()
-    enemy1.hunt()
-    #drawPlayerRect()
-    if grounded == False:
-        jumping = True
-    else:
-        jumping = False
+        for block in blocks:
+            block.draw(grass)
+        pygame.display.set_caption(f"{inRange}")
+        angleCalc()
+        for enemy in enemies:
+            if enemy.health > 0:   
+                enemy.draw()
+            #enemy1.EnemyGravity()
+                enemy.hunt()
+        #drawPlayerRect()
+        fightEnemy()
+        if grounded == False:
+            jumping = True
+        else:
+            jumping = False
     
 ##    endLevel(endPoint)
     #screen.blit(currentImage,(playerRect.x-playerSize,playerRect.y-playerSize+50))
@@ -529,5 +613,9 @@ while gameLoop:
     
     pygame.display.flip()
     
+    if gameMode>0:
+        data = {"x": int(world.x), "y": int(world.y+22),"momentumX":momentum.x,"momentumY":momentum.y}
+        with open('save.txt', 'w') as file:
+            json.dump(data,file)
 
 pygame.quit()
