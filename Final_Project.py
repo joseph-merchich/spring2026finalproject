@@ -40,6 +40,7 @@ troll = pygame.image.load("Troll with spear.png")
 stab = pygame.image.load("stab.png")
 up_slice = pygame.image.load("Up slice.png")
 down_slice = pygame.image.load("Down slice.png")
+demon = pygame.image.load("Demon.png")
 
 ##laceration = pygame.image.load("laceration.png")
 ##weakness= pygame.image.load("weakness.png")
@@ -77,6 +78,7 @@ heroImageY = 0
 heroSheetCounter = 0
 frameIndex = 0
 troll = pygame.transform.scale(troll, playerRect.size)
+demon = pygame.transform.scale(demon, playerRect.size)
 enemies = []
 class Block:
     def __init__(self, position, size, color):
@@ -150,14 +152,17 @@ class Block:
 
 
 class Enemy:
-    def __init__(self, position, size, brain, health, offset, speed):
+    def __init__(self, position, size, brain, health, offset, speed, grounded, momentumY,floatable):
         self.position = Vector2(position)
         self.size = size
         self.rect = pygame.Rect(position, size)
         self.brain = brain
         self.health = health
-        self.offset = Vector2(0,0)
+        self.offset = Vector2(position) - Vector2(world)
         self.speed = speed
+        self.grounded = grounded
+        self.momentumY = momentumY
+        self.floatable = floatable
         
     def draw(self):
         global troll
@@ -172,16 +177,72 @@ class Enemy:
             screen.blit(troll,self.rect)
 
     def EnemyGravity(self):
-        global offset,grounded,fallSpeed,momentumY
-    
-        if grounded == False:
-            if momentumY<fallSpeed:
-                momentumY += 1
-            offset.y-=momentumY
+        if self.grounded == False:
+            if self.momentumY<fallSpeed:
+                self.momentumY += 1
+            self.offset.y+=self.momentumY
+
         
         
+    def huntGravity(self):
+        global blocks,paths,screenRect,pathTarget
+        self.grounded = False
+        self.correctedThisFrame = False
+        self.rect.center = (world.x + self.offset.x,world.y + self.offset.y)
+        if self.brain < 3:
+            if playerRect.centerx > self.rect.centerx:
+                self.offset.x += self.speed * self.brain
+            if playerRect.centerx < self.rect.centerx:
+                self.offset.x -= self.speed * self.brain
+##           if playerRect.centery > self.rect.centery:
+##                self.offset.y += self.speed * self.brain
+##            if playerRect.centery < self.rect.centery:
+##                self.offset.y -= self.speed * self.brain
+        if self.brain == 1:
+                pass
+        if self.brain >= 2:
+            for block in blocks:
+                if block.rect.colliderect(self.rect):
+                    
+                    
+                    leftOverlap = block.rect.right - self.rect.left
+                    rightOverlap = self.rect.right - block.rect.left
+                    topOverlap = block.rect.bottom - self.rect.top
+                    bottomOverlap = self.rect.bottom - block.rect.top
+                    min_overlap = min(leftOverlap, rightOverlap, topOverlap, bottomOverlap)
+                    
+                    if min_overlap == topOverlap:
+                        self.offset.y += topOverlap
+                        
+                    elif min_overlap == bottomOverlap:
+                        if not self.correctedThisFrame:
+                            self.offset.y -= bottomOverlap
+                            self.grounded = True
+                            self.momentumY = 0
+                            self.correctedThisFrame = True
+                    elif min_overlap == leftOverlap:
+                        self.offset.x += leftOverlap
+                    elif min_overlap == rightOverlap:
+                        self.offset.x -= rightOverlap
+                    
+        if self.brain >= 3:
+            if pathTarget.x > self.rect.centerx:
+                self.offset.x += self.speed * self.brain
+            if pathTarget.x < self.rect.centerx:
+                self.offset.x -= self.speed * self.brain
+            if pathTarget.y > self.rect.centery:
+                self.offset.y += self.speed * self.brain
+            if pathTarget.y < self.rect.centery:
+                self.offset.y -= self.speed * self.brain
+        if self.brain == 4:
+            pass
+
+
+
     def hunt(self):
         global blocks,paths,screenRect,pathTarget
+        self.grounded = False
+        self.correctedThisFrame = False
         self.rect.center = (world.x + self.offset.x,world.y + self.offset.y)
         if self.brain < 3:
             if playerRect.centerx > self.rect.centerx:
@@ -196,7 +257,7 @@ class Enemy:
                 pass
         if self.brain >= 2:
             for block in blocks:
-                if block.rect.colliderect(self.rect)& block.rect.colliderect(screenRect):
+                if block.rect.colliderect(self.rect):
                     
                     
                     leftOverlap = block.rect.right - self.rect.left
@@ -209,8 +270,11 @@ class Enemy:
                         self.offset.y += topOverlap
                         
                     elif min_overlap == bottomOverlap:
-                        self.offset.y -= bottomOverlap
-                        
+                        if not self.correctedThisFrame:
+                            self.offset.y -= bottomOverlap
+                            self.grounded = True
+                            self.momentumY = 0
+                            self.correctedThisFrame = True
                     elif min_overlap == leftOverlap:
                         self.offset.x += leftOverlap
                     elif min_overlap == rightOverlap:
@@ -392,11 +456,11 @@ def gravity():
 ##        level += 1
         
 tilemapLevel1 = [
-    'B_______B______________________________BBB_______________________E',
+    'B_______B_____________D______D_________BBB_______________________T',
     'B__________________________________BBB_______________________BBBBBBBBB',
     'B______B________________________BBB______________________',
-    'B___________BB______________BBB_____________________________BBBBBBBBBBBB_____________________________________________B_____B______B______B_____BBBBBBBBBBBBBBBBBB',
-    'B______B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B_______________________',
+    'B___________BB____T_________BBB_____________________________BBBBBBBBBBBB_____________________________________________B_____B______B______B_____BBBBBBBBBBBBBBBBBB',
+    'B____T_B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B_______________________',
     'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBBBBBBBBBBBBBBBB',
     '___________________________________________________________________________________________________________BBBBBBBBBBBBBBBBBBBBBBBB______BBBBBBBB'
     ]
@@ -430,8 +494,10 @@ def buildWorld(tilemap):
             if tile == 'B':
                 #blocks.append(Block(x*tileSize, y*tileSize), (tileSize, tileSize), BLUE)
                 blocks.append(Block((offset.x + (x*tileSize), offset.y+(y*tileSize)), (tileSize, tileSize), BLUE))
-            elif tile == 'E':
-                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.size, 1,1, (0,0), 1))
+            elif tile == 'T':
+                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.size, 2,1, (0,0), 1, False, 0,False))
+            elif tile == 'D':
+                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.size, 1,1, (0,0), 1, False, 0, True))
 ##            if tile == 'F':
 ##                parallax()
 
@@ -598,8 +664,11 @@ while gameLoop:
         for enemy in enemies:
             if enemy.health > 0:   
                 enemy.draw()
-            #enemy1.EnemyGravity()
-                enemy.hunt()
+                if enemy.floatable == False:
+                    enemy.EnemyGravity()
+                    enemy.huntGravity()
+                else:
+                    enemy.hunt()
         #drawPlayerRect()
         fightEnemy()
         if grounded == False:
