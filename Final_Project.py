@@ -49,6 +49,7 @@ boost = 10
 boostVector = (0,0)
 acceptingNewVector = True
 inRange=False
+pathTarget = Vector2(0, 0)
 attackTimer = 0
 
 reticle = pygame.Rect(0,0,0,0)
@@ -163,14 +164,14 @@ class Enemy:
         self.grounded = grounded
         self.momentumY = momentumY
         self.floatable = floatable
-        
+        self.hitTimer = 0
     def draw(self):
         global troll
 
         if self.brain == 1:
             screen.blit(troll,self.rect)
         if self.brain == 2:
-            screen.blit(troll,self.rect)
+            screen.blit(demon,self.rect)
         if self.brain == 3:
             screen.blit(troll,self.rect)
         if self.brain == 4:
@@ -198,8 +199,31 @@ class Enemy:
 ##                self.offset.y += self.speed * self.brain
 ##            if playerRect.centery < self.rect.centery:
 ##                self.offset.y -= self.speed * self.brain
-        if self.brain == 1:
-                pass
+        if self.brain >= 1:
+            for block in blocks:
+                if block.rect.colliderect(self.rect):
+                    
+                    
+                    leftOverlap = block.rect.right - self.rect.left
+                    rightOverlap = self.rect.right - block.rect.left
+                    topOverlap = block.rect.bottom - self.rect.top
+                    bottomOverlap = self.rect.bottom - block.rect.top
+                    min_overlap = min(leftOverlap, rightOverlap, topOverlap, bottomOverlap)
+                    
+                    if min_overlap == topOverlap:
+                        self.offset.y += topOverlap
+                        
+                    elif min_overlap == bottomOverlap:
+                            if not self.correctedThisFrame:
+                                self.offset.y -= bottomOverlap
+                                self.grounded = True
+                                self.momentumY = 0
+                                self.correctedThisFrame = True
+                    elif min_overlap == leftOverlap:
+                        self.offset.x += leftOverlap
+                    elif min_overlap == rightOverlap:
+                        self.offset.x -= rightOverlap
+               
         if self.brain >= 2:
             for block in blocks:
                 if block.rect.colliderect(self.rect):
@@ -215,11 +239,11 @@ class Enemy:
                         self.offset.y += topOverlap
                         
                     elif min_overlap == bottomOverlap:
-                        if not self.correctedThisFrame:
-                            self.offset.y -= bottomOverlap
-                            self.grounded = True
-                            self.momentumY = 0
-                            self.correctedThisFrame = True
+                            if not self.correctedThisFrame:
+                                self.offset.y -= bottomOverlap
+                                self.grounded = True
+                                self.momentumY = 0
+                                self.correctedThisFrame = True
                     elif min_overlap == leftOverlap:
                         self.offset.x += leftOverlap
                     elif min_overlap == rightOverlap:
@@ -270,11 +294,12 @@ class Enemy:
                         self.offset.y += topOverlap
                         
                     elif min_overlap == bottomOverlap:
-                        if not self.correctedThisFrame:
-                            self.offset.y -= bottomOverlap
-                            self.grounded = True
-                            self.momentumY = 0
-                            self.correctedThisFrame = True
+                        if not self.floatable:
+                            if not self.correctedThisFrame:
+                                self.offset.y -= bottomOverlap
+                                self.grounded = True
+                                self.momentumY = 0
+                                self.correctedThisFrame = True
                     elif min_overlap == leftOverlap:
                         self.offset.x += leftOverlap
                     elif min_overlap == rightOverlap:
@@ -358,8 +383,13 @@ def fightEnemy():
     global playerRect, enemies
     for enemy in enemies:
         if playerRect.colliderect(enemy.rect) and (stabbing or slicing_up or slicing_down) == True:
-            enemy.offset.x -= 50
-            enemy.health -= 1
+            if pygame.time.get_ticks() - enemy.hitTimer > 500:
+                enemy.health -= 1
+                enemy.hitTimer = pygame.time.get_ticks()
+                if directionFacing == "left":
+                    enemy.offset.x -= 100
+                else:
+                    enemy.offset.x += 100
     
 
     
@@ -459,8 +489,8 @@ tilemapLevel1 = [
     'B_______B_____________D______D_________BBB_______________________T',
     'B__________________________________BBB_______________________BBBBBBBBB',
     'B______B________________________BBB______________________',
-    'B___________BB____T_________BBB_____________________________BBBBBBBBBBBB_____________________________________________B_____B______B______B_____BBBBBBBBBBBBBBBBBB',
-    'B____T_B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B_______________________',
+    'B___________BB____T_________BBB_____________________________BBBBBBBBBBBB_______D________________________D____________B_____B______B______B_____BBBBBBBBBBBBBBBBBB',
+    'B____T_B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B___D__________________',
     'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBBBBBBBBBBBBBBBB',
     '___________________________________________________________________________________________________________BBBBBBBBBBBBBBBBBBBBBBBB______BBBBBBBB'
     ]
@@ -494,10 +524,11 @@ def buildWorld(tilemap):
             if tile == 'B':
                 #blocks.append(Block(x*tileSize, y*tileSize), (tileSize, tileSize), BLUE)
                 blocks.append(Block((offset.x + (x*tileSize), offset.y+(y*tileSize)), (tileSize, tileSize), BLUE))
+                # Remember: Enemy = position, size, brain, health, offset, speed, grounded, momentumY,floatable
             elif tile == 'T':
-                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.size, 2,1, (0,0), 1, False, 0,False))
+                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.get_size(), 1,1, (0,0), 1, False, 0,False))
             elif tile == 'D':
-                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.size, 1,1, (0,0), 1, False, 0, True))
+                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2,3, (0,0), 1, False, 0, True))
 ##            if tile == 'F':
 ##                parallax()
 
@@ -664,11 +695,11 @@ while gameLoop:
         for enemy in enemies:
             if enemy.health > 0:   
                 enemy.draw()
-                if enemy.floatable == False:
+                if enemy.floatable == True:
+                    enemy.hunt()
+                elif enemy.floatable == False:
                     enemy.EnemyGravity()
                     enemy.huntGravity()
-                else:
-                    enemy.hunt()
         #drawPlayerRect()
         fightEnemy()
         if grounded == False:
