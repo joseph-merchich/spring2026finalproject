@@ -51,6 +51,8 @@ acceptingNewVector = True
 inRange=False
 pathTarget = Vector2(0, 0)
 attackTimer = 0
+levelExitPos = Vector2(0, 0)
+levelExitRect = pygame.Rect(0, 0, 300, 300)
 
 reticle = pygame.Rect(0,0,0,0)
 
@@ -70,6 +72,7 @@ walking = True
 stabbing = False
 slicing_up = False
 slicing_down = False
+levelLoaded = False
 directionFacing = "right"
 heroSheetW, heroSheetH = running_sheet.get_size()
 heroSheetRows = 1
@@ -178,6 +181,7 @@ class Enemy:
             screen.blit(troll,self.rect)
 
     def EnemyGravity(self):
+        global momentumY, offset
         if self.grounded == False:
             if self.momentumY<fallSpeed:
                 self.momentumY += 1
@@ -186,7 +190,7 @@ class Enemy:
         
         
     def huntGravity(self):
-        global blocks,paths,screenRect,pathTarget
+        global blocks,paths,screenRect,pathTarget, momentumY, offset
         self.grounded = False
         self.correctedThisFrame = False
         self.rect.center = (world.x + self.offset.x,world.y + self.offset.y)
@@ -264,7 +268,7 @@ class Enemy:
 
 
     def hunt(self):
-        global blocks,paths,screenRect,pathTarget
+        global blocks,paths,screenRect,pathTarget, momentumY
         self.grounded = False
         self.correctedThisFrame = False
         self.rect.center = (world.x + self.offset.x,world.y + self.offset.y)
@@ -320,7 +324,7 @@ class Enemy:
 
 #enemy1 = Enemy((100,100), (troll.size), 1,1,(0,0,),1)
 def handleInputs():
-    global gameLoop,boost,world,acceptingNewVector,inRange, jumping, directionFacing, walking, stabbing, slicing_up, slicing_down, attackTimer
+    global gameLoop,boost,world,acceptingNewVector,inRange, jumping, directionFacing, walking, stabbing, slicing_up, slicing_down, attackTimer, offset
     walking = False
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
@@ -380,7 +384,7 @@ def drawPlayerWalk():
 
 
 def fightEnemy():
-    global playerRect, enemies
+    global playerRect, enemies, offset
     for enemy in enemies:
         if playerRect.colliderect(enemy.rect) and (stabbing or slicing_up or slicing_down) == True:
             if pygame.time.get_ticks() - enemy.hitTimer > 500:
@@ -394,7 +398,7 @@ def fightEnemy():
 
     
 def loadGame():
-    global data,gameMode
+    global data,gameMode, offset
     try:
         # the file already exists
         with open('save.txt') as load_file:
@@ -487,20 +491,20 @@ def gravity():
         
 tilemapLevel1 = [
     'B_______B_____________D______D_________BBB_______________________T',
-    'B__________________________________BBB_______________________BBBBBBBBB',
+    'B__________________________________BBB_______________________BBBBBBBBB_____________________________________________________________________________________________________DDDDDDDDDD',
     'B______B________________________BBB______________________',
-    'B___________BB____T_________BBB_____________________________BBBBBBBBBBBB_______D________________________D____________B_____B______B______B_____BBBBBBBBBBBBBBBBBB',
-    'B____T_B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B___D__________________',
-    'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBBBBBBBBBBBBBBBB',
-    '___________________________________________________________________________________________________________BBBBBBBBBBBBBBBBBBBBBBBB______BBBBBBBB'
+    'B___________BB____T_________BBB_____________________________BBBBBBBBBBBB___T___D________________________D____________B_____B_T____B______B_____BBBBBBBBBBBBBBBBBB____',
+    'B____T_B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B___D_______D_________________________________LLLLLLLLLLLLLLLLLLLL__',
+    'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBBBBBBBBBBBBBBBB___________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    '___________________________________________________________________________________________________________BBBBBBBBBBBBBBBBBBBBBBBB______BBBBBBBB__________________________BBBBBBBBBB'
     ]
 
 endPoint = 500,500
 
-tileMapLevel2 = [
+tileMapLevel1_1 = [
     '---------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB------BBBBB',
-    '---------------BBBBBBBBBBBB',
-    '-----------------------------BBBBBBBBBB---------------------------',
+    '------------------------------------------------------',
+    '--------------------E---------BBBBBBBBBB---------------------------',
     'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
     ]
     
@@ -518,7 +522,7 @@ level = 1
 blocks = []
 tileSize = 100
 def buildWorld(tilemap):
-    global level
+    global level, levelExitPos, offset
     for y, row in enumerate(tilemap):
         for x, tile in enumerate(row):
             if tile == 'B':
@@ -529,6 +533,10 @@ def buildWorld(tilemap):
                 enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.get_size(), 1,1, (0,0), 1, False, 0,False))
             elif tile == 'D':
                 enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2,3, (0,0), 1, False, 0, True))
+            elif tile == 'L':
+                levelExitPos = Vector2(x * tileSize, y * tileSize)
+            elif tile == 'E':
+                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 3,10, (0,0), 1, False, 0, False))
 ##            if tile == 'F':
 ##                parallax()
 
@@ -623,21 +631,22 @@ def animate():
 ##if level == 1:
 offset.y = 500 - (1 * tileSize) - playerRect.height
 buildWorld(tilemapLevel1)
+##if level == 1_1:
+##            buildWorld(tileMapLevel1_1)
     
-if level == 2:
-    buildWorld(tileMapLevel2)
 world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
 
 while gameLoop:
-    screen.fill(SKYBLUE)
     clock.tick(FPS)
     mousePos = pygame.mouse.get_pos()
     events = pygame.event.get()
     handleInputs()
     if gameMode == 0:
+        screen.fill("black")
         drawButtons()
     elif gameMode == 1:
     #perform all physics calculations first
+        screen.fill(SKYBLUE)
         frameCorrection = False
         grounded = False
 ##    stabbing = False
@@ -672,6 +681,7 @@ while gameLoop:
                 block.collide(playerRect)
             if block.rect.colliderect(reticle):
                 inRange = True
+        
     
     #ground = pygame.Rect(world.x-100,world.y+150,800,200)
     #block1 = Block((world.x-100,world.y+150),(200,200),BLUE)
@@ -689,7 +699,22 @@ while gameLoop:
 ##    hero_jumping = pygame.transform.scale(hero_jumping, world.size)
     #playerRect = pygame.Rect(w/2,h/2,playerSize,playerSize)
         for block in blocks:
-            block.draw(grass)
+            if level == 1:
+                block.draw(grass)
+            elif level == 2:
+                block.draw(stone)
+        levelExitRect.topleft = (levelExitPos.x + world.x, levelExitPos.y + world.y)
+        if playerRect.colliderect(levelExitRect):
+            level = 1_1
+            print("You have completed the level!")
+        if level == 1_1 and not levelLoaded:
+            blocks.clear()
+            enemies.clear()
+            offset.x = 0
+            offset.y = -400
+            momentumY = 0
+            buildWorld(tileMapLevel1_1)
+            levelLoaded = True
         pygame.display.set_caption(f"{inRange}")
         angleCalc()
         for enemy in enemies:
