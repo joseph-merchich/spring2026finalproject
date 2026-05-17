@@ -53,7 +53,7 @@ pathTarget = Vector2(0, 0)
 attackTimer = 0
 levelExitPos = Vector2(0, 0)
 levelExitRect = pygame.Rect(0, 0, 300, 300)
-
+currentLevel = 1
 reticle = pygame.Rect(0,0,0,0)
 
 FPS = 100
@@ -156,7 +156,7 @@ class Block:
 
 
 class Enemy:
-    def __init__(self, position, size, brain, health, offset, speed, grounded, momentumY,floatable):
+    def __init__(self, position, size, brain, health, offset, speed, grounded, momentumY,floatable, level):
         self.position = Vector2(position)
         self.size = size
         self.rect = pygame.Rect(position, size)
@@ -167,6 +167,7 @@ class Enemy:
         self.grounded = grounded
         self.momentumY = momentumY
         self.floatable = floatable
+        self.level = level
         self.hitTimer = 0
     def draw(self):
         global troll
@@ -176,7 +177,7 @@ class Enemy:
         if self.brain == 2:
             screen.blit(demon,self.rect)
         if self.brain == 3:
-            screen.blit(troll,self.rect)
+            screen.blit(demon, self.rect)
         if self.brain == 4:
             screen.blit(troll,self.rect)
 
@@ -407,6 +408,7 @@ def loadGame():
             offset.y = data["y"] - playerRect.y
             momentum.x = data["momentumX"]
             momentum.y = data["momentumY"]
+            currentLevel = data["level"]
             #world = pygame.Rect(Vector2(data["x"],data["y"]),50,50)
     except:
         # create the file and store initial values
@@ -494,14 +496,14 @@ tilemapLevel1 = [
     'B__________________________________BBB_______________________BBBBBBBBB_____________________________________________________________________________________________________DDDDDDDDDD',
     'B______B________________________BBB______________________',
     'B___________BB____T_________BBB_____________________________BBBBBBBBBBBB___T___D________________________D____________B_____B_T____B______B_____BBBBBBBBBBBBBBBBBB____',
-    'B____T_B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B___D_______D_________________________________LLLLLLLLLLLLLLLLLLLL__',
+    'B____T_B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B___D_______D_______________________LLLLLLLLLLLLLLLLLLLL__',
     'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBBBBBBBBBBBBBBBB___________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
     '___________________________________________________________________________________________________________BBBBBBBBBBBBBBBBBBBBBBBB______BBBBBBBB__________________________BBBBBBBBBB'
     ]
 
 endPoint = 500,500
 
-tileMapLevel1_1 = [
+tileMapLevel2 = [
     '---------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB------BBBBB',
     '------------------------------------------------------',
     '--------------------E---------BBBBBBBBBB---------------------------',
@@ -510,33 +512,45 @@ tileMapLevel1_1 = [
     
    
 def parallax():
-    global level
+    global currentLevel
     background = pygame.Rect(world.x*50,world.y,1000,1000)
     pygame.draw.rect(screen, ('black'), (background))
     if playerRect.colliderect(background):
         message = font.render("You have completed the level!", True, RED)
         screen.blit(message, (100,100))
-        level += 1
+        currentLevel += 1
         
-level = 1
+currentLevel = 1
 blocks = []
 tileSize = 100
-def buildWorld(tilemap):
-    global level, levelExitPos, offset
+def buildWorld(tilemap, levelNum):
+    global currentLevel, levelExitPos, offset, enemies
     for y, row in enumerate(tilemap):
         for x, tile in enumerate(row):
             if tile == 'B':
                 #blocks.append(Block(x*tileSize, y*tileSize), (tileSize, tileSize), BLUE)
                 blocks.append(Block((offset.x + (x*tileSize), offset.y+(y*tileSize)), (tileSize, tileSize), BLUE))
                 # Remember: Enemy = position, size, brain, health, offset, speed, grounded, momentumY,floatable
+##            elif tile == 'T':
+##                e = enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.get_size(), 1,1, (0,0), 1, False, 0,False,1))
+##                e.level = levelNum
+##            elif tile == 'D':
+##                e = enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2,3, (0,0), 1, False, 0, True,1))
+##                e.level = levelNum
             elif tile == 'T':
-                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.get_size(), 1,1, (0,0), 1, False, 0,False))
+                e = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.get_size(), 1, 1, (0,0), 1, False, 0, False,1)
+                e.level = levelNum
+                enemies.append(e)
             elif tile == 'D':
-                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2,3, (0,0), 1, False, 0, True))
+                e = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 3, (0,0), 1, False, 0, True, 1)
+                e.level = levelNum
+                enemies.append(e)
             elif tile == 'L':
-                levelExitPos = Vector2(x * tileSize, y * tileSize)
+                levelExitPos = Vector2(offset.x + x * tileSize, offset.y + y * tileSize)
             elif tile == 'E':
-                enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 3,10, (0,0), 1, False, 0, False))
+                boss = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 3,10, (0,0), 1, False, 0, False,1_1)
+                boss.level = levelNum
+                enemies.append(boss)
 ##            if tile == 'F':
 ##                parallax()
 
@@ -630,7 +644,7 @@ def animate():
         screen.blit(hero_facing_forward, (playerRect.centerx - hero_facing_forward.get_width() // 2, playerRect.centery - hero_facing_forward.get_height() // 2))"""
 ##if level == 1:
 offset.y = 500 - (1 * tileSize) - playerRect.height
-buildWorld(tilemapLevel1)
+buildWorld(tilemapLevel1,1)
 ##if level == 1_1:
 ##            buildWorld(tileMapLevel1_1)
     
@@ -653,6 +667,7 @@ while gameLoop:
 ##    slicing_up = False
 ##    slicing_down = False
         animate()
+        pygame.draw.rect(screen, GREEN, levelExitRect, 3)
     
 
         w, h = pygame.display.get_surface().get_size()
@@ -698,27 +713,30 @@ while gameLoop:
 ##    hero_facing_forward = pygame.transform.scale(hero_facing_forward, world.size)
 ##    hero_jumping = pygame.transform.scale(hero_jumping, world.size)
     #playerRect = pygame.Rect(w/2,h/2,playerSize,playerSize)
-        for block in blocks:
-            if level == 1:
-                block.draw(grass)
-            elif level == 2:
-                block.draw(stone)
+        
         levelExitRect.topleft = (levelExitPos.x + world.x, levelExitPos.y + world.y)
-        if playerRect.colliderect(levelExitRect):
-            level = 1_1
+        pygame.draw.rect(screen, GREEN, levelExitRect, 3)
+        if playerRect.colliderect(levelExitRect) and not levelLoaded:
+            currentLevel += 1
             print("You have completed the level!")
-        if level == 1_1 and not levelLoaded:
-            blocks.clear()
-            enemies.clear()
-            offset.x = 0
-            offset.y = -400
-            momentumY = 0
-            buildWorld(tileMapLevel1_1)
-            levelLoaded = True
+            if currentLevel == 2:
+                blocks.clear()
+                enemies.clear()
+                offset.x = 0
+                offset.y = 400
+                levelExitPos = Vector2(0, 0) 
+                momentumY = 0
+                buildWorld(tileMapLevel2,2)
+                levelLoaded = True
+        for block in blocks:
+            if currentLevel == 1:
+                block.draw(grass)
+            elif currentLevel == 2:
+                block.draw(stone)
         pygame.display.set_caption(f"{inRange}")
         angleCalc()
         for enemy in enemies:
-            if enemy.health > 0:   
+            if enemy.health > 0 and enemy.level == currentLevel:
                 enemy.draw()
                 if enemy.floatable == True:
                     enemy.hunt()
@@ -739,7 +757,8 @@ while gameLoop:
     pygame.display.flip()
     
     if gameMode>0:
-        data = {"x": int(world.x), "y": int(world.y+22),"momentumX":momentum.x,"momentumY":momentum.y}
+        data = {"x": 0, "y": 0, "momentumX": 0, "momentumY": 0, "level": currentLevel}
+##        data = {"x": int(world.x), "y": int(world.y+22),"momentumX":momentum.x,"momentumY":momentum.y}
         with open('save.txt', 'w') as file:
             json.dump(data,file)
 
