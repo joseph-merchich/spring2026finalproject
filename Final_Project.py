@@ -41,7 +41,7 @@ stab = pygame.image.load("stab.png")
 up_slice = pygame.image.load("Up slice.png")
 down_slice = pygame.image.load("Down slice.png")
 demon = pygame.image.load("Demon.png")
-
+dead_demon = pygame.image.load("dead demon.png")
 ##laceration = pygame.image.load("laceration.png")
 ##weakness= pygame.image.load("weakness.png")
 
@@ -73,6 +73,7 @@ stabbing = False
 slicing_up = False
 slicing_down = False
 levelLoaded = False
+deadBlitted = False
 directionFacing = "right"
 heroSheetW, heroSheetH = running_sheet.get_size()
 heroSheetRows = 1
@@ -83,7 +84,12 @@ heroSheetCounter = 0
 frameIndex = 0
 troll = pygame.transform.scale(troll, playerRect.size)
 demon = pygame.transform.scale(demon, playerRect.size)
+dead_demon = pygame.transform.scale(dead_demon, playerRect.size)
 enemies = []
+
+bossAttackTimer = 0
+bossPhase = "waiting"
+bossHomeX = 0
 class Block:
     def __init__(self, position, size, color):
         self.position = Vector2(position)
@@ -156,7 +162,7 @@ class Block:
 
 
 class Enemy:
-    def __init__(self, position, size, brain, health, offset, speed, grounded, momentumY,floatable, level):
+    def __init__(self, position, size, brain, health, offset, speed, grounded, momentumY,floatable, level, name):
         self.position = Vector2(position)
         self.size = size
         self.rect = pygame.Rect(position, size)
@@ -168,6 +174,7 @@ class Enemy:
         self.momentumY = momentumY
         self.floatable = floatable
         self.level = level
+        self.name = name
         self.hitTimer = 0
     def draw(self):
         global troll
@@ -506,7 +513,7 @@ endPoint = 500,500
 tileMapLevel2 = [
     '---------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB------BBBBB',
     '------------------------------------------------------',
-    '--------------------E---------BBBBBBBBBB---------------------------',
+    '--------------E---------BBBBBBBBBB---------------------------',
     'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
     ]
     
@@ -538,22 +545,25 @@ def buildWorld(tilemap, levelNum):
 ##                e = enemies.append(Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2,3, (0,0), 1, False, 0, True,1))
 ##                e.level = levelNum
             elif tile == 'T':
-                e = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.get_size(), 1, 1, (0,0), 1, False, 0, False,1)
+                e = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), troll.get_size(), 1, 1, (0,0), 1, False, 0, False,1, "troll")
                 e.level = levelNum
                 enemies.append(e)
             elif tile == 'D':
-                e = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 3, (0,0), 1, False, 0, True, 1)
+                e = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 3, (0,0), 1, False, 0, True, 1, "demon")
                 e.level = levelNum
                 enemies.append(e)
             elif tile == 'L':
                 levelExitPos = Vector2(offset.x + x * tileSize, offset.y + y * tileSize)
             elif tile == 'E':
-                boss = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 3,10, (0,0), 1, False, 0, False,1_1)
+                boss = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 10, (0,0), 1, False, 0, True, 2, "boss")
                 boss.level = levelNum
                 enemies.append(boss)
 ##            if tile == 'F':
 ##                parallax()
 
+
+
+    
 def animate():
     global heroImageX,heroImageY,heroSheetCounter,playerRect,heroSheetW, hero_jumping,stab,up_slice
     global heroSheetH,heroSheetColumns,scaledHero,subArea,directionFacing,walking,stabbing,slicing_up,slicing_down,frameIndex,attackTimer
@@ -619,29 +629,7 @@ def animate():
         scaledSub = pygame.transform.scale(subArea, playerRect.size)
         screen.blit(scaledSub, playerRect)
 
-"""def animate():
-    global playerRect, jumping
-    if jumping == True and pygame.time.get_ticks() > 100:
-        playerRect = pygame.Rect(w/2,h/2,playerSize-10,playerSize-10)
-        screen.blit(hero_jumping, (playerRect.centerx - hero_jumping.get_width() // 2, playerRect.centery - hero_jumping.get_height() // 2))
-        #screen.blit(hero_jumping,(playerRect.x-playerSize,playerRect.y-playerSize+50))
-    elif jumping == False:
-        screen.blit(hero_facing_forward,(playerRect.centerx - hero_facing_forward.get_width() // 2, playerRect.centery - hero_facing_forward.get_height() // 2))
-        #screen.blit(hero_facing_forward,(playerRect.x-50,playerRect.y-playerSize))
-    elif directionFacing == "left":
-        screen.blit(hero_facing_left,(playerRect.centerx - hero_facing_left.get_width() // 2, playerRect.centery - hero_facing_left.get_height() // 2))
-        #screen.blit(hero_facing_left,(playerRect.x-playerSize,playerRect.y-playerSize+50))
-    elif directionFacing == 'right':
-        screen.blit(hero_facing_forward,(playerRect.centerx - hero_facing_forward.get_width() // 2, playerRect.centery - hero_facing_forward.get_height() // 2))
-        #screen.blit(hero_facing_forward,(playerRect.x-playerSize,playerRect.y-playerSize+50))"""
-"""def animate():
-    global playerRect, jumping
-    if jumping == True:
-        screen.blit(hero_jumping, (playerRect.centerx - hero_jumping.get_width() // 2, playerRect.centery - hero_jumping.get_height() // 2))
-    elif directionFacing == "left":
-        screen.blit(hero_facing_left, (playerRect.centerx - hero_facing_left.get_width() // 2, playerRect.centery - hero_facing_left.get_height() // 2))
-    else:
-        screen.blit(hero_facing_forward, (playerRect.centerx - hero_facing_forward.get_width() // 2, playerRect.centery - hero_facing_forward.get_height() // 2))"""
+
 ##if level == 1:
 offset.y = 500 - (1 * tileSize) - playerRect.height
 buildWorld(tilemapLevel1,1)
@@ -663,6 +651,7 @@ while gameLoop:
         screen.fill(SKYBLUE)
         frameCorrection = False
         grounded = False
+        pathTarget = Vector2(playerRect.centerx, playerRect.centery)
 ##    stabbing = False
 ##    slicing_up = False
 ##    slicing_down = False
@@ -726,23 +715,80 @@ while gameLoop:
                 offset.y = 400
                 levelExitPos = Vector2(0, 0) 
                 momentumY = 0
+                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
                 buildWorld(tileMapLevel2,2)
                 levelLoaded = True
+                bossAttackTimer = pygame.time.get_ticks()
         for block in blocks:
             if currentLevel == 1:
                 block.draw(grass)
             elif currentLevel == 2:
-                block.draw(stone)
+                block.draw(grass)
         pygame.display.set_caption(f"{inRange}")
         angleCalc()
         for enemy in enemies:
             if enemy.health > 0 and enemy.level == currentLevel:
                 enemy.draw()
-                if enemy.floatable == True:
-                    enemy.hunt()
-                elif enemy.floatable == False:
-                    enemy.EnemyGravity()
-                    enemy.huntGravity()
+                if enemy.name != "boss":  # ← add this guard
+                    if enemy.floatable:
+                        enemy.hunt()
+                    else:
+                        enemy.EnemyGravity()
+                        enemy.huntGravity()
+                if enemy.name == "boss":
+                    enemy.rect.center = (world.x + enemy.offset.x, world.y + enemy.offset.y)
+                    for block in blocks:
+                        if block.rect.colliderect(enemy.rect):
+                            leftOverlap = block.rect.right - enemy.rect.left
+                            rightOverlap = enemy.rect.right - block.rect.left
+                            topOverlap = block.rect.bottom - enemy.rect.top
+                            bottomOverlap = enemy.rect.bottom - block.rect.top
+                            min_overlap = min(leftOverlap, rightOverlap, topOverlap, bottomOverlap)
+                            if min_overlap == bottomOverlap:
+                                enemy.offset.y -= bottomOverlap  # stop at floor
+                            elif min_overlap == topOverlap:
+                                enemy.offset.y += topOverlap
+                            elif min_overlap == leftOverlap:
+                                enemy.offset.x += leftOverlap
+                            elif min_overlap == rightOverlap:
+                                enemy.offset.x -= rightOverlap
+                    elapsed = pygame.time.get_ticks() - bossAttackTimer
+
+                    if bossPhase == "waiting":
+        # drift back to home position
+                        if enemy.offset.x < bossHomeX: enemy.offset.x += 3
+                        if enemy.offset.x > bossHomeX: enemy.offset.x -= 3
+                        if elapsed > 1000:
+                            bossPhase = "charging"
+                            bossAttackTimer = pygame.time.get_ticks()
+
+                    elif bossPhase == "charging":
+        # move toward player's offset (not screen pos)
+                        playerOffsetX = playerRect.centerx - world.x
+                        if enemy.offset.x < playerOffsetX: enemy.offset.x += 8
+                        if enemy.offset.x > playerOffsetX: enemy.offset.x -= 8
+                        if elapsed > 800:
+                            bossPhase = "retreating"
+                            bossAttackTimer = pygame.time.get_ticks()
+
+                    elif bossPhase == "retreating":
+        # move back to home
+                        if enemy.offset.x < bossHomeX: enemy.offset.x += 5
+                        if enemy.offset.x > bossHomeX: enemy.offset.x -= 5
+                        if elapsed > 600:
+                            bossPhase = "waiting"
+                            bossAttackTimer = pygame.time.get_ticks()
+        for e in enemies:
+            if e.name == "boss":
+                bossHomeX = e.offset.x
+                e.EnemyGravity()
+                
+        for enemy in enemies:
+            if enemy.health <= 0:
+                    if enemy.name == "demon" and not deadBlitted:
+                        screen.blit(dead_demon, enemy.offset)
+                        deadBlitted = True
+##                        enemy.EnemyGravity()
         #drawPlayerRect()
         fightEnemy()
         if grounded == False:
@@ -757,8 +803,9 @@ while gameLoop:
     pygame.display.flip()
     
     if gameMode>0:
-        data = {"x": 0, "y": 0, "momentumX": 0, "momentumY": 0, "level": currentLevel}
-##        data = {"x": int(world.x), "y": int(world.y+22),"momentumX":momentum.x,"momentumY":momentum.y}
+        world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y) 
+        ##data = {"x": 0, "y": 0, "momentumX": 0, "momentumY": 0, "level": currentLevel}
+        data = {"x": int(world.x), "y": int(world.y),"momentumX":0,"momentumY":0}
         with open('save.txt', 'w') as file:
             json.dump(data,file)
 

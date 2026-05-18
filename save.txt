@@ -1,1 +1,1 @@
-{"x": 0, "y": 0, "momentumX": 0, "momentumY": 0, "level": 2}
+{"x": -125, "y": -72, "momentumX": 0, "momentumY": 0}
