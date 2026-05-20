@@ -14,7 +14,7 @@ BLACK = (0,0,0)
 GREEN = (0,255,0)
 RED = (255,0,0)
 PEACH = (255,176,156)
-
+DARKBLUE = (26, 36, 132)
 gameLoop = True
 gameMode = 0
 playerSpeed = 5
@@ -46,7 +46,7 @@ dead_demon = pygame.image.load("dead demon.png")
 ##weakness= pygame.image.load("weakness.png")
 
 boost = 10
-boostVector = (0,0)
+boostVector = Vector2(0, 0)
 acceptingNewVector = True
 inRange=False
 pathTarget = Vector2(0, 0)
@@ -98,7 +98,7 @@ class Block:
         self.color = color
     def draw(self, surface):
         surface = pygame.transform.scale(surface,self.size)
-        screen.blit(surface,block)
+        screen.blit(surface,self.rect)
         #pygame.draw.rect(screen, (BLUE), self.rect, 0, 0)
         
     """def collide(self,player):
@@ -511,13 +511,46 @@ tilemapLevel1 = [
 endPoint = 500,500
 
 tileMapLevel2 = [
-    '---------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB------BBBBB',
+    '---------------------------',
     '------------------------------------------------------',
-    '--------------E---------BBBBBBBBBB---------------------------',
+    '--------------E-------------------------------------------------LLL',
     'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
     ]
-    
-   
+
+
+tileMapLevel3 = [
+    '------------------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    '------------------------------------BBB--------------------------------------------------------------------------------------------------------B',
+    '------------------------------------BBB---------------DDDDDD--------------------------------------------------------------------------------------B',
+    '---BBB------------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBB-----BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB------------------L',
+    '------------------------------------BBBB--------------------------------------------------------------------------------------------------BBBBBBBBBBBBBBBBBBB',
+    '------------------------------------BBBB--------TTTTTT----------------------------------------------------------------------------------------------B',
+    '------------------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB---------------------------------B',
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBB------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB-------------BBBBBBBBBBBBBBBBBBBBBBB',
+    'BBBBBBBBBBBBBBBBBBBBBB---------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB-------BBBBBBBBBBBBBBBBBBBBBBBBBB',
+    'BBBBBBBBBBBBB--------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB-------------------------------------------------------------------------------------B',
+    '-------------------BBBBBBBBBBB--------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBB---------------------------------------------------------------------------------B',
+    'B------------------BBBBBBBBBBB--------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB--------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    'BBBBBBBBBB------BBBBBBBBBBBBBBBBBBBB--------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB----------------------B',
+    'BBBBBBBBBB------BBBBBBBBBBBBBBBBBBBB----------------------------------------------------------------B',
+    'BBBBBBBBB-------BBBBBBBBBBBBBBBBBBBBBBBBBB---------------------------------------------------------B',
+    'BBBBBBBBB-----BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB--------BBBBBBBBBBBBBBBBBB--',
+    'BBBBBBBBB-----BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB------------------B',
+    'BBBBBBBBB---------------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB-------BBBBBBBBBBBBBBBBBBBBBBBBB',
+    'BBBBBBBBB---------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB--------BBBBBBBBBBBBBBBBBBBBBBBBBB',
+    '----------------------------------------------------------------------------------------------------------------------------B',
+    '----------------------------------------------------------------------------------------------------------------------------B',
+    '----------------------------------------------------------------------------------------------------------------------------B',
+    '----------------------------------------------------------------------------------------------------------------------------B',
+    '--------------------------------------------------------------------------------------------------------------------------LLB',
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    ]
+
+tileMapLevel4 = [
+    '----------------------------------------',
+    '---------------------E--------------------',
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB-----L'
+    ]
 def parallax():
     global currentLevel
     background = pygame.Rect(world.x*50,world.y,1000,1000)
@@ -649,6 +682,7 @@ while gameLoop:
     elif gameMode == 1:
     #perform all physics calculations first
         screen.fill(SKYBLUE)
+
         frameCorrection = False
         grounded = False
         pathTarget = Vector2(playerRect.centerx, playerRect.centery)
@@ -702,8 +736,13 @@ while gameLoop:
 ##    hero_facing_forward = pygame.transform.scale(hero_facing_forward, world.size)
 ##    hero_jumping = pygame.transform.scale(hero_jumping, world.size)
     #playerRect = pygame.Rect(w/2,h/2,playerSize,playerSize)
+##        levelExitRect.topleft = (levelExitPos.x + world.x - offset.x,
+##                         levelExitPos.y + world.y - offset.y)
         
         levelExitRect.topleft = (levelExitPos.x + world.x, levelExitPos.y + world.y)
+        if not playerRect.colliderect(levelExitRect):
+            levelLoaded = False
+            
         pygame.draw.rect(screen, GREEN, levelExitRect, 3)
         if playerRect.colliderect(levelExitRect) and not levelLoaded:
             currentLevel += 1
@@ -713,23 +752,58 @@ while gameLoop:
                 enemies.clear()
                 offset.x = 0
                 offset.y = 400
+                boost = 0
+                boostVector = Vector2(0, 0)
                 levelExitPos = Vector2(0, 0) 
                 momentumY = 0
+                levelLoaded = True
                 world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
                 buildWorld(tileMapLevel2,2)
-                levelLoaded = True
+##                levelLoaded = False
                 bossAttackTimer = pygame.time.get_ticks()
+            elif currentLevel == 3:
+                blocks.clear()
+                enemies.clear()
+                offset.x = 100
+                offset.y = 500 - (5 * tileSize) - playerRect.height
+                boost = 0
+                boostVector = Vector2(0, 0)
+                levelExitPos = Vector2(0, 0) 
+                momentumY = 0
+                levelLoaded = True
+                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+                buildWorld(tileMapLevel3,3)
+                print(len(blocks))
+##                grounded = True
+##                levelLoaded = False
+            elif currentLevel == 4:
+                blocks.clear()
+                enemies.clear()
+                offset.x = 200
+                offset.y = 500 - (1 * tileSize) - playerRect.height
+                boost = 0
+                boostVector = Vector2(0, 0)
+                levelExitPos = Vector2(0, 0) 
+                momentumY = 0
+                levelLoaded = True
+                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+                buildWorld(tileMapLevel4,4)
+
         for block in blocks:
             if currentLevel == 1:
                 block.draw(grass)
             elif currentLevel == 2:
                 block.draw(grass)
+            elif currentLevel == 3:
+                block.draw(stone)
+            elif currentLevel == 4:
+                block.draw(brimstone)
         pygame.display.set_caption(f"{inRange}")
         angleCalc()
         for enemy in enemies:
             if enemy.health > 0 and enemy.level == currentLevel:
                 enemy.draw()
-                if enemy.name != "boss":  # ← add this guard
+                if enemy.name != "boss":  
                     if enemy.floatable:
                         enemy.hunt()
                     else:
