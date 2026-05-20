@@ -349,6 +349,12 @@ def handleInputs():
         directionFacing = "right"
         offset.x -= playerSpeed
         walking = True
+    if keys[pygame.K_SPACE]:
+        if inRange==True:
+                inRange = False
+                boost = 40
+                acceptingNewVector = True
+                jumping = True
     for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN:
             #print(f"Mouse button {event.button} clicked at {event.pos}")
@@ -588,9 +594,13 @@ def buildWorld(tilemap, levelNum):
             elif tile == 'L':
                 levelExitPos = Vector2(offset.x + x * tileSize, offset.y + y * tileSize)
             elif tile == 'E':
-                boss = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 10, (0,0), 1, False, 0, True, 2, "boss")
-                boss.level = levelNum
-                enemies.append(boss)
+                if currentLevel == 2:
+                    boss = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 10, (0,0), 1, False, 0, True, 2, "boss")
+                    boss.level = levelNum
+                    enemies.append(boss)
+                elif currentLevel == 4:
+                    boss = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 20, (0,0), 1, False, 0, True, 2, "boss")
+                    boss.level = levelNum
 ##            if tile == 'F':
 ##                parallax()
 
