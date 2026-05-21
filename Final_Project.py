@@ -1,4 +1,4 @@
-import pygame,random,math,json
+import pygame,random,math,json,time,sys
 from pygame.locals import *
 from pygame.math import Vector2
 pygame.init()
@@ -20,7 +20,9 @@ gameMode = 0
 playerSpeed = 5
 grounded = False
 fallSpeed = 9
+fallTimer = 0
 playerSize = 150
+playerHealth = 500
 
 momentumX = 0
 momentumY = 0
@@ -32,6 +34,8 @@ dirt = pygame.image.load("dirt.png")
 brimstone = pygame.image.load("brimstone.png")
 lavarock = pygame.image.load("lavarock.png")
 stone = pygame.image.load("Gray stone.png")
+stony_ground = pygame.image.load("stony ground.png")
+swampy_ground = pygame.image.load("swamp ground.png")
 forest = pygame.image.load("Forest background.png")
 running_sheet = pygame.image.load("Running Animation.png")
 hero_facing_left = pygame.image.load("Amadis_facing_backwards.png")
@@ -41,7 +45,13 @@ stab = pygame.image.load("stab.png")
 up_slice = pygame.image.load("Up slice.png")
 down_slice = pygame.image.load("Down slice.png")
 demon = pygame.image.load("Demon.png")
+big_troll = pygame.image.load("big troll.png")
+imp = pygame.image.load("imp.png")
+ghost = pygame.image.load("ghost.png")
+giant = pygame.image.load("giant.png")
 dead_demon = pygame.image.load("dead demon.png")
+game_over = pygame.image.load("game over.png")
+win = pygame.image.load("win.png")
 ##laceration = pygame.image.load("laceration.png")
 ##weakness= pygame.image.load("weakness.png")
 
@@ -66,6 +76,7 @@ world = pygame.math.Vector2(w/2,h/2)
 playerRect = pygame.Rect(w/2, h/2, 114, 128)
 #playerRect = pygame.Rect(w/2,h/2,100,500)
 playerFeet = playerRect
+playerHitTimer = 0
 ground = pygame.Rect(world.x,world.y+100,1000,100)
 jumping = False
 walking = True
@@ -83,8 +94,13 @@ heroImageY = 0
 heroSheetCounter = 0
 frameIndex = 0
 troll = pygame.transform.scale(troll, playerRect.size)
+big_troll = pygame.transform.scale(big_troll, playerRect.size)
+imp = pygame.transform.scale(imp, playerRect.size)
+ghost = pygame.transform.scale(ghost, playerRect.size)
 demon = pygame.transform.scale(demon, playerRect.size)
 dead_demon = pygame.transform.scale(dead_demon, playerRect.size)
+game_over = pygame.transform.scale(game_over, screen.get_size())
+
 enemies = []
 
 bossAttackTimer = 0
@@ -182,7 +198,21 @@ class Enemy:
         if self.brain == 1:
             screen.blit(troll,self.rect)
         if self.brain == 2:
-            screen.blit(demon,self.rect)
+            if self.name == 'boss':
+                if currentLevel == 2:
+                    screen.blit(big_troll,self.rect)
+                if currentLevel == 4:
+                    screen.blit(imp,self.rect)
+                if currentLevel == 6:
+                    screen.blit(ghost,self.rect)
+                if currentLevel == 8:
+                    screen.blit(giant,self.rect)
+                if currentLevel == 10:
+                    screen.blit(wolfmaster, self.rect)
+                    if self.health <= 0:
+                        displayWin()
+            else:
+                screen.blit(demon,self.rect)
         if self.brain == 3:
             screen.blit(demon, self.rect)
         if self.brain == 4:
@@ -398,9 +428,11 @@ def drawPlayerWalk():
 
 
 def fightEnemy():
-    global playerRect, enemies, offset
+    global playerRect, enemies, offset, playerHealth, playerHitTimer, boost, boostVector, acceptingNewVector
     for enemy in enemies:
-        if playerRect.colliderect(enemy.rect) and (stabbing or slicing_up or slicing_down) == True:
+        if enemy.health <= 0:
+            continue
+        if playerRect.colliderect(enemy.rect) and (stabbing or slicing_up or slicing_down):
             if pygame.time.get_ticks() - enemy.hitTimer > 500:
                 enemy.health -= 1
                 enemy.hitTimer = pygame.time.get_ticks()
@@ -408,27 +440,33 @@ def fightEnemy():
                     enemy.offset.x -= 100
                 else:
                     enemy.offset.x += 100
-    
-
-    
+        elif playerRect.colliderect(enemy.rect) and not (stabbing or slicing_up or slicing_down):
+            if pygame.time.get_ticks() - playerHitTimer > 500:
+                # Launch the player away from the enemy using the boost system
+                if enemy.rect.centerx > playerRect.centerx:
+                    boostVector = Vector2(-3, -1)
+                else:
+                    boostVector = Vector2(3, -1)
+                boost = 20
+                acceptingNewVector = False
+                playerHealth -= 1
+                playerHitTimer = pygame.time.get_ticks()
+                
 def loadGame():
-    global data,gameMode, offset
+    global data, gameMode, offset, currentLevel, playerHealth
     try:
-        # the file already exists
         with open('save.txt') as load_file:
             data = json.load(load_file)
             offset.x = data["x"] - playerRect.x
             offset.y = data["y"] - playerRect.y
             momentum.x = data["momentumX"]
             momentum.y = data["momentumY"]
-            currentLevel = data["level"]
-            #world = pygame.Rect(Vector2(data["x"],data["y"]),50,50)
+            currentLevel = data["level"]       # now correctly sets the global
+            playerHealth = data["playerHealth"] # restores health
     except:
-        # create the file and store initial values
         with open('save.txt', 'w') as store_file:
             json.dump(data, store_file)
-    gameMode=1
-
+    gameMode = 1
 
 def newGame():
     global data,gameMode
@@ -436,6 +474,17 @@ def newGame():
         json.dump(data, store_file)
     gameMode=1
 
+def displayGameOver():
+    screen.fill(BLACK)
+    screen.blit(game_over, (0, 0))
+    pygame.display.flip()
+
+def displayWin():
+    screen.fill(BLACK)
+    screen.blit(win, (0, 0))
+    pygame.display.flip()
+    
+    
 buttons = []
 messages = []
 
@@ -489,12 +538,13 @@ def angleCalc():
     if boost > 0:
         boost -= 1
 def gravity():
-    global offset,grounded,fallSpeed,momentumY
+    global offset,grounded,fallSpeed,momentumY,playerHealth, fallTimer
     
     if grounded == False:
         if momentumY<fallSpeed:
-            momentumY += 1
+            momentumY += 1       
         offset.y-=momentumY
+        
 
 ##def endLevel(end):
 ##    here = font.render("Hit here!", True, RED)
@@ -509,7 +559,7 @@ tilemapLevel1 = [
     'B__________________________________BBB_______________________BBBBBBBBB_____________________________________________________________________________________________________DDDDDDDDDD',
     'B______B________________________BBB______________________',
     'B___________BB____T_________BBB_____________________________BBBBBBBBBBBB___T___D________________________D____________B_____B_T____B______B_____BBBBBBBBBBBBBBBBBB____',
-    'B____T_B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B___D_______D_______________________LLLLLLLLLLLLLLLLLLLL__',
+    'B______B____BBBB_________BB_______________________________BBBBBBBBBBBB_______________________________________________B_____B______B______B___D_______D_______________________LLLLLLLLLLLLLLLLLLLL__',
     'BBBBBBBBB__BBBBBBB__BBBB_____________________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB_BBBBBBBBBBBBBB__BB__BB__BB__BB__BB__BB__BB_____B______B______B____BBBBBBBBBBBBBBBBBBB___________BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
     '___________________________________________________________________________________________________________BBBBBBBBBBBBBBBBBBBBBBBB______BBBBBBBB__________________________BBBBBBBBBB'
     ]
@@ -528,7 +578,7 @@ tileMapLevel3 = [
     '------------------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
     '------------------------------------BBB--------------------------------------------------------------------------------------------------------B',
     '------------------------------------BBB---------------DDDDDD--------------------------------------------------------------------------------------B',
-    '---BBB------------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBB-----BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB------------------L',
+    '---BBB------------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBB-----BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB------------------',
     '------------------------------------BBBB--------------------------------------------------------------------------------------------------BBBBBBBBBBBBBBBBBBB',
     '------------------------------------BBBB--------TTTTTT----------------------------------------------------------------------------------------------B',
     '------------------------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB---------------------------------B',
@@ -548,15 +598,74 @@ tileMapLevel3 = [
     '----------------------------------------------------------------------------------------------------------------------------B',
     '----------------------------------------------------------------------------------------------------------------------------B',
     '----------------------------------------------------------------------------------------------------------------------------B',
-    '--------------------------------------------------------------------------------------------------------------------------LLB',
+    'B----------------------------------TTT-------------------------------------------------------------------------------------LLB',
     'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
     ]
 
 tileMapLevel4 = [
     '----------------------------------------',
-    '---------------------E--------------------',
-    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB-----L'
+    '-----------B----------E--------------------',
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB-----L'
     ]
+
+tileMapLevel5 = [
+    '--------------------------------------------------------------------------BBB------BBBBB------',
+    '---------------------------------------------------------------------BBB-----------------------------------',
+    '----------------BBBBBBBB---------------------------------------------------------------------BB------BBBBBBBB',
+    '----BBBB---------------------------------------------------------BBB---------------------------------',
+    '----------------------------------------------------------BBB--------------------------------------',
+    '----------------BBBBBBBBBBBB---------------------BBBBB---------------------------------------------------L--',
+    '------------------------------------------------------------------------------------------------------BBBBBBB--',
+    '-----TTDDD-----------------------------------------------------------------------------------------------------',
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB---------------------------------------------------------'
+    ]
+
+tileMapLevel6 = [
+    '--------------------------------',
+    '--------------------E--------------',
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB----L'
+    ]
+
+tileMapLevel7 = [
+    '-------------------------------------',
+    '--------------------------TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT-----------------------------------BBBBB',
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB---------------------BBBBBBBBBB----------------------------L',
+    '----------------------------TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---------------------BBBBBBBBBBBBBBB--------------BBBBBBBBBBBBB----------',
+    '----------------------------------------------------------------------------------',
+    'BBBBBBBBBBBBBBBBBBB-------BBBBBBBB----BBBBBBBBBBBB---BBBBBBBBBBB-----BBBBBBBBBBBBBBBBBBBB---BBBBBBBBBBBBB',
+    '------BBBBBBBBBBBBB-------BBBBBBBBB----BBBBBBBBBBB---BBBBBBBBBBB------BBBBBBBBBBBBBBBBBB-------BBBBBBBBBB',
+    'BBBBBBBBBBBBBBBBBB----------BBBBBBB----BBBBBBBBBB-----BBBBBBBBBBB-----BBBBBBBBBBBBBBBBBBB------BBBBBBBBBB'
+    ]
+
+tileMapLevel8 = [
+    '------------------------L'
+    '---------E----------------'
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBB'
+    ]
+
+tileMapLevel9 = [
+    '-----------------------------TTTTLTTTT',
+    '---------------------------DDBBBBBBBBBDDDDD',
+    '--------------------------BBBBBBBBBBBBBBBBB',
+    '------------------------BBBBBBBBBBBBBBBBBBBB',
+    '----------------------BBBBBBBBBBBBBBBBBBBBBBBBB',
+    '--------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    '------------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    '---------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    '------------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    '----------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    '-------BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    '-----BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    '---BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
+    ]
+
+tileMapLevel10 = [
+    '-----------------------------',
+    '------------------E-----------',
+    'BBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
+    ]
+
 def parallax():
     global currentLevel
     background = pygame.Rect(world.x*50,world.y,1000,1000)
@@ -567,6 +676,7 @@ def parallax():
         currentLevel += 1
         
 currentLevel = 1
+
 blocks = []
 tileSize = 100
 def buildWorld(tilemap, levelNum):
@@ -601,6 +711,22 @@ def buildWorld(tilemap, levelNum):
                 elif currentLevel == 4:
                     boss = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 20, (0,0), 1, False, 0, True, 2, "boss")
                     boss.level = levelNum
+                    enemies.append(boss)
+                elif currentLevel == 6:
+                    boss = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 30, (0,0), 1, False, 0, True, 2, "boss")
+                    boss.level = levelNum
+                    enemies.append(boss)
+                    
+                elif currentLevel == 8:
+                    boss = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 40, (0,0), 1, False, 0, True, 2, "boss")
+                    boss.level = levelNum
+                    enemies.append(boss)
+
+                elif currentLevel == 10:
+                    boss = Enemy((offset.x + (x*tileSize), offset.y+(y*tileSize)), demon.get_size(), 2, 50, (0,0), 1, False, 0, True, 2, "boss")
+                    boss.level = levelNum
+                    enemies.append(boss)
+                
 ##            if tile == 'F':
 ##                parallax()
 
@@ -695,6 +821,7 @@ while gameLoop:
 
         frameCorrection = False
         grounded = False
+        
         pathTarget = Vector2(playerRect.centerx, playerRect.centery)
 ##    stabbing = False
 ##    slicing_up = False
@@ -711,7 +838,9 @@ while gameLoop:
     #world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
     #world = pygame.Rect(playerRect.x+offset.x,playerRect.y+offset.y,playerRect.w,playerRect.h)
         world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
-    
+        
+        message = font.render(f"Health: {playerHealth}", True, RED)
+        screen.blit(message, (100,100))
 ##    parallax()
         inRange=False
     #jumping = False
@@ -729,6 +858,19 @@ while gameLoop:
                 block.collide(playerRect)
             if block.rect.colliderect(reticle):
                 inRange = True
+                
+        if not grounded:
+            if fallTimer == 0:
+                fallTimer = pygame.time.get_ticks()
+            elif pygame.time.get_ticks() - fallTimer > 5000:
+                playerHealth -= 5
+                momentumY = 0
+                grounded = True
+                fallTimer = 0
+                offset.x = 0      # reset to level start X
+                offset.y = 0      # reset to level start Y
+        else:
+            fallTimer = 0
         
     
     #ground = pygame.Rect(world.x-100,world.y+150,800,200)
@@ -783,7 +925,6 @@ while gameLoop:
                 levelLoaded = True
                 world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
                 buildWorld(tileMapLevel3,3)
-                print(len(blocks))
 ##                grounded = True
 ##                levelLoaded = False
             elif currentLevel == 4:
@@ -798,6 +939,99 @@ while gameLoop:
                 levelLoaded = True
                 world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
                 buildWorld(tileMapLevel4,4)
+                
+            elif currentLevel == 5:
+                blocks.clear()
+                enemies.clear()
+                offset.x = 200
+                offset.y = 500 - (1 * tileSize) - playerRect.height
+                boost = 0
+                boostVector = Vector2(0, 0)
+                levelExitPos = Vector2(0, 0) 
+                momentumY = 0
+                levelLoaded = True
+                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+                buildWorld(tileMapLevel5,5)
+                
+            elif currentLevel == 5:
+                blocks.clear()
+                enemies.clear()
+                offset.x = 200
+                offset.y = 500 - (1 * tileSize) - playerRect.height
+                boost = 0
+                boostVector = Vector2(0, 0)
+                levelExitPos = Vector2(0, 0) 
+                momentumY = 0
+                levelLoaded = True
+                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+                buildWorld(tileMapLevel5,5)
+
+            elif currentLevel == 6:
+                blocks.clear()
+                enemies.clear()
+                offset.x = 100
+                offset.y = 500 - (1 * tileSize) - playerRect.height
+                boost = 0
+                boostVector = Vector2(0, 0)
+                levelExitPos = Vector2(0, 0) 
+                momentumY = 0
+                levelLoaded = True
+                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+                buildWorld(tileMapLevel6,6)
+
+            elif currentLevel == 7:
+                blocks.clear()
+                enemies.clear()
+                offset.x = 100
+                offset.y = 500 - (1 * tileSize) - playerRect.height
+                boost = 0
+                boostVector = Vector2(0, 0)
+                levelExitPos = Vector2(0, 0) 
+                momentumY = 0
+                levelLoaded = True
+                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+                buildWorld(tileMapLevel7,7)
+
+            elif currentLevel == 8:
+                blocks.clear()
+                enemies.clear()
+                offset.x = 100
+                offset.y = 500 - (1 * tileSize) - playerRect.height
+                boost = 0
+                boostVector = Vector2(0, 0)
+                levelExitPos = Vector2(0, 0) 
+                momentumY = 0
+                levelLoaded = True
+                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+                buildWorld(tileMapLevel8,8)
+
+            elif currentLevel == 9:
+                blocks.clear()
+                enemies.clear()
+                offset.x = 100
+                offset.y = 500 - (1 * tileSize) - playerRect.height
+                boost = 0
+                boostVector = Vector2(0, 0)
+                levelExitPos = Vector2(0, 0) 
+                momentumY = 0
+                levelLoaded = True
+                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+                buildWorld(tileMapLevel9,9)
+
+            elif currentLevel == 10:
+                blocks.clear()
+                enemies.clear()
+                offset.x = 100
+                offset.y = 500 - (1 * tileSize) - playerRect.height
+                boost = 0
+                boostVector = Vector2(0, 0)
+                levelExitPos = Vector2(0, 0) 
+                momentumY = 0
+                levelLoaded = True
+                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
+                buildWorld(tileMapLevel10,10)
+
+
 
         for block in blocks:
             if currentLevel == 1:
@@ -807,6 +1041,18 @@ while gameLoop:
             elif currentLevel == 3:
                 block.draw(stone)
             elif currentLevel == 4:
+                block.draw(brimstone)
+            elif currentLevel == 5:
+                block.draw(stony_ground)
+            elif currentLevel == 6:
+                block.draw(stony_ground)
+            elif currentLevel == 7:
+                block.draw(swampy_ground)
+            elif currentLevel == 8:
+                block.draw(swampy_ground)
+            elif currentLevel == 9:
+                block.draw(lavarock)
+            elif currentLevel == 10:
                 block.draw(brimstone)
         pygame.display.set_caption(f"{inRange}")
         angleCalc()
@@ -869,9 +1115,10 @@ while gameLoop:
                 
         for enemy in enemies:
             if enemy.health <= 0:
-                    if enemy.name == "demon" and not deadBlitted:
-                        screen.blit(dead_demon, enemy.offset)
-                        deadBlitted = True
+                continue
+##                    if enemy.name == "demon" and not deadBlitted:
+##                        screen.blit(dead_demon, enemy.offset)
+##                        deadBlitted = True
 ##                        enemy.EnemyGravity()
         #drawPlayerRect()
         fightEnemy()
@@ -879,7 +1126,13 @@ while gameLoop:
             jumping = True
         else:
             jumping = False
-    
+
+    if playerHealth <= 0:
+        displayGameOver()
+        print("Too bad!")
+        time.sleep(5)
+        pygame.quit()
+        sys.exit()
 ##    endLevel(endPoint)
     #screen.blit(currentImage,(playerRect.x-playerSize,playerRect.y-playerSize+50))
     #screen.blit(currentImage,(playerRect.x-50,playerRect.y-playerSize))
@@ -889,7 +1142,14 @@ while gameLoop:
     if gameMode>0:
         world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y) 
         ##data = {"x": 0, "y": 0, "momentumX": 0, "momentumY": 0, "level": currentLevel}
-        data = {"x": int(world.x), "y": int(world.y),"momentumX":0,"momentumY":0}
+        data = {
+            "x": int(world.x),
+            "y": int(world.y),
+            "momentumX": 0,
+            "momentumY": 0,
+            "level": currentLevel,       
+            "playerHealth": playerHealth 
+            }
         with open('save.txt', 'w') as file:
             json.dump(data,file)
 
