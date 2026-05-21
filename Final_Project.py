@@ -49,6 +49,7 @@ big_troll = pygame.image.load("big troll.png")
 imp = pygame.image.load("imp.png")
 ghost = pygame.image.load("ghost.png")
 giant = pygame.image.load("giant.png")
+wolfmaster = pygame.image.load("wolfmaster.png")
 dead_demon = pygame.image.load("dead demon.png")
 game_over = pygame.image.load("game over.png")
 win = pygame.image.load("win.png")
@@ -638,8 +639,8 @@ tileMapLevel7 = [
     ]
 
 tileMapLevel8 = [
-    '------------------------L'
-    '---------E----------------'
+    '------------------------L',
+    '---------E----------------',
     'BBBBBBBBBBBBBBBBBBBBBBBBBBB'
     ]
 
@@ -939,19 +940,6 @@ while gameLoop:
                 levelLoaded = True
                 world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
                 buildWorld(tileMapLevel4,4)
-                
-            elif currentLevel == 5:
-                blocks.clear()
-                enemies.clear()
-                offset.x = 200
-                offset.y = 500 - (1 * tileSize) - playerRect.height
-                boost = 0
-                boostVector = Vector2(0, 0)
-                levelExitPos = Vector2(0, 0) 
-                momentumY = 0
-                levelLoaded = True
-                world = pygame.Vector2(playerRect.x + offset.x, playerRect.y + offset.y)
-                buildWorld(tileMapLevel5,5)
                 
             elif currentLevel == 5:
                 blocks.clear()
