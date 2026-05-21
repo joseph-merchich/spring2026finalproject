@@ -22,7 +22,7 @@ grounded = False
 fallSpeed = 9
 fallTimer = 0
 playerSize = 150
-playerHealth = 500
+playerHealth = 300
 
 momentumX = 0
 momentumY = 0
