@@ -120,35 +120,6 @@ class Block:
         screen.blit(surface,self.rect)
         #pygame.draw.rect(screen, (BLUE), self.rect, 0, 0)
         
-    """def collide(self,player):
-        global offset,grounded,mousePos,fallSpeed,momentumY,boost,reticle
-            
-        if self.rect.colliderect(player):
-            grounded = True
-            leftOverlap = player.right - self.rect.left
-            rightOverlap = self.rect.right - player.left
-            topOverlap = player.bottom - self.rect.top
-            bottomOverlap = self.rect.bottom - player.top
-            min_overlap = min(leftOverlap, rightOverlap, topOverlap, bottomOverlap)#Which of these overlaps is smallest?
-            
-            if min_overlap == topOverlap:
-                momentumY=0
-                offset.y += topOverlap
-                grounded = True
-                momentumY = 0
-                
-            elif min_overlap == bottomOverlap:
-                momentumY=0
-                offset.y -= bottomOverlap
-                boost=0
-                grounded = True
-                
-            elif min_overlap == leftOverlap:
-                offset.x += leftOverlap
-                grounded = True
-            elif min_overlap == rightOverlap:
-                offset.x -= rightOverlap
-                grounded = True"""
     
     def collide(self, player):
         global offset, grounded, mousePos, fallSpeed, momentumY, boost, reticle, frameCorrection
@@ -166,7 +137,7 @@ class Block:
                 if not frameCorrection:
                     momentumY = 0
                     offset.y += topOverlap
-                    grounded = True        # <-- ONLY here
+                    grounded = True        
                     frameCorrection = True
             elif min_overlap == bottomOverlap:
                 momentumY = 0
