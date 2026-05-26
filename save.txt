@@ -1,1 +1,1 @@
-{"x": -104, "y": 155, "momentumX": 0, "momentumY": 0, "level": 6, "playerHealth": 1}
+{"x": -8685, "y": -1869, "momentumX": 0, "momentumY": 0, "level": 1, "playerHealth": 286}
