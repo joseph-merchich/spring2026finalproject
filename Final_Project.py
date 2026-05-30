@@ -657,7 +657,7 @@ def parallax():
         screen.blit(message, (100,100))
         currentLevel += 1
         
-currentLevel = 1
+currentLevel = 4
 
 blocks = []
 tileSize = 100
@@ -783,12 +783,12 @@ def animate():
 
 ##if level == 1:
 offset.y = 500 - (1 * tileSize) - playerRect.height
-buildWorld(tilemapLevel1,1)
 ##if level == 1_1:
 ##            buildWorld(tileMapLevel1_1)
     
 world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
-
+if currentLevel == 1:
+    buildWorld(tilemapLevel1, 1)
 while gameLoop:
     clock.tick(FPS)
     mousePos = pygame.mouse.get_pos()
@@ -876,7 +876,8 @@ while gameLoop:
         levelExitRect.topleft = (levelExitPos.x + world.x, levelExitPos.y + world.y)
         if not playerRect.colliderect(levelExitRect):
             levelLoaded = False
-            
+
+
         pygame.draw.rect(screen, GREEN, levelExitRect, 3)
         if playerRect.colliderect(levelExitRect) and not levelLoaded:
             currentLevel += 1
