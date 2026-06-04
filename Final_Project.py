@@ -657,7 +657,7 @@ def parallax():
         screen.blit(message, (100,100))
         currentLevel += 1
         
-currentLevel = 4
+currentLevel = 1
 
 blocks = []
 tileSize = 100
