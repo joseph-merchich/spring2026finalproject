@@ -789,6 +789,11 @@ offset.y = 500 - (1 * tileSize) - playerRect.height
 world = pygame.Vector2(playerRect.x+offset.x,playerRect.y+offset.y)
 if currentLevel == 1:
     buildWorld(tilemapLevel1, 1)
+pygame.mixer.music.load("beginning theme.mp3")
+pygame.mixer.music.play()
+pygame.mixer.music.unload()
+pygame.mixer.music.load('Main theme.mp3')
+pygame.mixer.music.play(-1)
 while gameLoop:
     clock.tick(FPS)
     mousePos = pygame.mouse.get_pos()
